@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc && vite build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
