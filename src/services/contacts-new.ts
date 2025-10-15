@@ -55,7 +55,16 @@ export const contactsService = {
       
       console.log('📤 Form data created, making request...');
       
-      const response = await apiClient.upload<ContactUploadApiResponse>('/v1/contacts/upload', formData);
+      // Use POST instead of upload
+      const response = await apiClient.post<ContactUploadApiResponse>(
+        '/v1/contacts/upload',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
       
       console.log('✅ Contacts uploaded successfully:', response.data);
       
@@ -67,9 +76,10 @@ export const contactsService = {
       console.error('❌ Error uploading contacts:', error);
       console.error('❌ Error response:', error.response?.data);
       
-      const errorMessage = error.response?.data?.detail?.[0]?.msg || 
-                          error.response?.data?.message || 
-                          'Failed to upload contacts';
+      const errorMessage =
+        error.response?.data?.detail?.[0]?.msg ||
+        error.response?.data?.message ||
+        'Failed to upload contacts';
       
       return {
         success: false,
@@ -96,27 +106,27 @@ export const contactsService = {
   },
 
   // Create new contact (not supported by API)
-  createContact: async (contactData: Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>): Promise<Contact> => {
+  createContact: async (_contactData: Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>): Promise<Contact> => {
     throw new Error('Creating individual contacts is not supported by the current API. Please use the upload feature.');
   },
 
   // Update contact (not supported by API)
-  updateContact: async (id: string, contactData: Partial<Contact>): Promise<Contact> => {
+  updateContact: async (_id: string, _contactData: Partial<Contact>): Promise<Contact> => {
     throw new Error('Updating contacts is not supported by the current API.');
   },
 
   // Delete contact (not supported by API)
-  deleteContact: async (id: string): Promise<void> => {
+  deleteContact: async (_id: string): Promise<void> => {
     throw new Error('Deleting contacts is not supported by the current API.');
   },
 
   // Bulk delete contacts (not supported by API)
-  bulkDeleteContacts: async (ids: string[]): Promise<void> => {
+  bulkDeleteContacts: async (_ids: string[]): Promise<void> => {
     throw new Error('Bulk deleting contacts is not supported by the current API.');
   },
 
   // Export contacts to CSV (not supported by API)
-  exportContacts: async (filters: ContactFilters = {}): Promise<Blob> => {
+  exportContacts: async (_filters: ContactFilters = {}): Promise<Blob> => {
     throw new Error('Exporting contacts is not supported by the current API.');
   },
 

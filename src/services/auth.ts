@@ -3,7 +3,6 @@ import {
   LoginCredentials, 
   AuthResponse, 
   User, 
-  Body_login_v1_login_post, 
   Token,
   HTTPValidationError 
 } from '../types';
