@@ -85,17 +85,28 @@ const CampaignsEnhanced: React.FC = () => {
     }
   };
 
-  const loadContacts = async () => {
+const loadContacts = async () => {
     try {
-      const contactsData = await contactsService.getUploadedContacts();
+      console.log('🔄 Loading contacts for campaigns...');
+      // Use getContacts() to get all contacts (both uploaded and individual)
+      const contactsData = await contactsService.getContacts();
+      console.log('📊 Raw contacts data:', contactsData);
+      
       const mappedContacts: ContactApiResponse[] = contactsData.map(contact => ({
         name: contact.name,
         phone_number: contact.phone
       }));
+      
+      console.log('✅ Mapped contacts:', mappedContacts);
       setContacts(mappedContacts);
+      
+      if (mappedContacts.length === 0) {
+        console.warn('⚠️ No contacts found - please upload contacts first');
+      }
     } catch (error) {
-      console.error('Error loading contacts:', error);
+      console.error('❌ Error loading contacts:', error);
       toast.error('Failed to load contacts');
+      setContacts([]); // Set empty array on error
     }
   };
 

@@ -1,17 +1,23 @@
-import React, { useState } from 'react';
-import { Phone, User, Lock } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/common/Button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { LoginCredentials } from '../types';
+import React, { useState } from "react";
+import { Phone, User, Lock } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { Button } from "../components/common/Button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { LoginCredentials } from "../types";
 
 const Login: React.FC = () => {
   const { login, isLoading } = useAuth();
   const [formData, setFormData] = useState<LoginCredentials>({
-    username: '',
-    password: '',
+    username: "",
+    password: "",
   });
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
 
@@ -21,15 +27,15 @@ const Login: React.FC = () => {
     const newErrors: Partial<LoginCredentials> = {};
 
     if (!formData.username) {
-      newErrors.username = 'Username is required';
+      newErrors.username = "Username is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.username)) {
-      newErrors.username = 'Please enter a valid email address';
+      newErrors.username = "Please enter a valid email address";
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     setErrors(newErrors);
@@ -38,32 +44,32 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       await login(formData);
     } catch (error) {
       // Error is handled in the auth context
-      console.error('Login error:', error);
+      console.error("Login error:", error);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name as keyof LoginCredentials]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: undefined
+        [name]: undefined,
       }));
     }
   };
@@ -76,7 +82,9 @@ const Login: React.FC = () => {
             <div className="flex justify-center mb-4">
               <Phone className="h-12 w-12 text-primary" />
             </div>
-            <CardTitle className="text-3xl font-bold">AI Calling Platform</CardTitle>
+            <CardTitle className="text-3xl font-bold">
+              AI Calling Platform
+            </CardTitle>
             <CardDescription>Sign in to your account</CardDescription>
           </CardHeader>
 
@@ -96,12 +104,16 @@ const Login: React.FC = () => {
                       required
                       value={formData.username}
                       onChange={handleChange}
-                      className={`pl-10 ${errors.username ? 'border-destructive' : ''}`}
+                      className={`pl-10 ${
+                        errors.username ? "border-destructive" : ""
+                      }`}
                       placeholder="Enter your username (email)"
                     />
                   </div>
                   {errors.username && (
-                    <p className="text-sm text-destructive">{errors.username}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.username}
+                    </p>
                   )}
                 </div>
 
@@ -118,12 +130,16 @@ const Login: React.FC = () => {
                       required
                       value={formData.password}
                       onChange={handleChange}
-                      className={`pl-10 ${errors.password ? 'border-destructive' : ''}`}
+                      className={`pl-10 ${
+                        errors.password ? "border-destructive" : ""
+                      }`}
                       placeholder="Enter your password"
                     />
                   </div>
                   {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.password}
+                    </p>
                   )}
                 </div>
               </div>
@@ -135,15 +151,41 @@ const Login: React.FC = () => {
                 isLoading={isLoading}
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? "Signing in..." : "Sign in"}
               </Button>
 
               {/* Demo Credentials */}
               <Card className="bg-muted/50">
                 <CardContent className="pt-4">
-                  <p className="text-sm font-medium text-muted-foreground mb-2">Demo Credentials:</p>
-                  <p className="text-sm text-muted-foreground">Username: admin@example.com</p>
-                  <p className="text-sm text-muted-foreground">Password: admin123</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-3">
+                    Demo Credentials:
+                  </p>
+
+                  {/* Admin */}
+                  <div className="mb-3">
+                    <p className="text-sm font-semibold text-muted-foreground mb-1">
+                      Admin:
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Username: admin@example.com
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Password: admin123
+                    </p>
+                  </div>
+
+                  {/* Agent */}
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground mb-1">
+                      Agent:
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Username: agent@example.com
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Password: agent123
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </form>

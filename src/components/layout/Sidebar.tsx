@@ -1,23 +1,22 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Megaphone, 
+import React, { useState } from "react";
+import { NavLink } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  LayoutDashboard,
+  Users,
+  Megaphone,
   History,
   PhoneIncoming,
-  Brain, 
-  BookOpen, 
-  BarChart3, 
+  Brain,
+  BookOpen,
+  BarChart3,
   Settings,
   Phone,
   ChevronLeft,
-  ChevronRight,
-  Sparkles
-} from 'lucide-react';
-import { useSidebar } from './Layout';
-import { cn } from '../../lib/utils';
+  Sparkles,
+} from "lucide-react";
+import { useSidebar } from "./Layout";
+import { cn } from "../../lib/utils";
 
 interface NavItem {
   name: string;
@@ -28,16 +27,28 @@ interface NavItem {
 }
 
 const navigation: NavItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Contacts', href: '/contacts', icon: Users },
-  { name: 'Campaigns', href: '/campaigns', icon: Megaphone, badge: 'New', badgeColor: 'bg-green-500' },
-  { name: 'Call History', href: '/history', icon: History },
-  { name: 'Inbound Calls', href: '/inbound', icon: PhoneIncoming },
-  { name: 'Outbound Calls', href: '/outbound', icon: Phone },
-  { name: 'AI Insights', href: '/ai', icon: Brain, badge: 'AI', badgeColor: 'bg-purple-500' },
-  { name: 'Knowledge Base', href: '/knowledge', icon: BookOpen },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Contacts", href: "/contacts", icon: Users },
+  {
+    name: "Campaigns",
+    href: "/campaigns",
+    icon: Megaphone,
+    badge: "New",
+    badgeColor: "bg-green-500",
+  },
+  { name: "Call History", href: "/history", icon: History },
+  { name: "Inbound Calls", href: "/inbound", icon: PhoneIncoming },
+  { name: "Outbound Calls", href: "/outbound", icon: Phone },
+  {
+    name: "AI Insights",
+    href: "/ai",
+    icon: Brain,
+    badge: "AI",
+    badgeColor: "bg-purple-500",
+  },
+  { name: "Knowledge Base", href: "/knowledge", icon: BookOpen },
+  { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 const Sidebar: React.FC = () => {
@@ -50,17 +61,17 @@ const Sidebar: React.FC = () => {
       transition: {
         type: "spring" as const,
         stiffness: 300,
-        damping: 30
-      }
+        damping: 30,
+      },
     },
     closed: {
       x: "-100%",
       transition: {
         type: "spring" as const,
         stiffness: 300,
-        damping: 30
-      }
-    }
+        damping: 30,
+      },
+    },
   };
 
   const toggleCollapse = () => {
@@ -70,7 +81,7 @@ const Sidebar: React.FC = () => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <motion.div 
+      <motion.div
         className={cn(
           "hidden lg:flex flex-col bg-white/80 backdrop-blur-xl border-r border-gray-200/50 shadow-xl relative transition-all duration-300",
           isCollapsed ? "w-16" : "w-64"
@@ -79,16 +90,21 @@ const Sidebar: React.FC = () => {
         transition={{ duration: 0.3, ease: "easeInOut" }}
       >
         {/* Collapse Button */}
-        <button
+        <motion.button
           onClick={toggleCollapse}
-          className="absolute -right-3 top-8 z-50 bg-white border border-gray-200 rounded-full p-1.5 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110"
+          className="absolute -right-3 top-6 bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg p-2 shadow-lg hover:shadow-xl transition-all duration-200 z-50"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          {isCollapsed ? (
-            <ChevronRight className="h-4 w-4 text-gray-600" />
-          ) : (
-            <ChevronLeft className="h-4 w-4 text-gray-600" />
-          )}
-        </button>
+          {" "}
+          <motion.div
+            animate={{ rotate: isCollapsed ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {" "}
+            <ChevronLeft className="h-4 w-4 text-white" />{" "}
+          </motion.div>{" "}
+        </motion.button>
 
         <div className="flex flex-col h-full">
           {/* Logo */}
@@ -116,7 +132,7 @@ const Sidebar: React.FC = () => {
               )}
             </AnimatePresence>
           </div>
-          
+
           {/* Navigation */}
           <div className="flex-1 px-3">
             <nav className="space-y-1">
@@ -139,7 +155,11 @@ const Sidebar: React.FC = () => {
                         <motion.div
                           className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600"
                           layoutId="activeTab"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                          transition={{
+                            type: "spring",
+                            bounce: 0.2,
+                            duration: 0.6,
+                          }}
                         />
                       )}
                       <div className="relative z-10 flex items-center w-full">
@@ -161,10 +181,12 @@ const Sidebar: React.FC = () => {
                             >
                               <span>{item.name}</span>
                               {item.badge && (
-                                <span className={cn(
-                                  "px-2 py-0.5 text-xs font-medium text-white rounded-full",
-                                  item.badgeColor || "bg-blue-500"
-                                )}>
+                                <span
+                                  className={cn(
+                                    "px-2 py-0.5 text-xs font-medium text-white rounded-full",
+                                    item.badgeColor || "bg-blue-500"
+                                  )}
+                                >
                                   {item.badge}
                                 </span>
                               )}
@@ -178,7 +200,7 @@ const Sidebar: React.FC = () => {
               ))}
             </nav>
           </div>
-          
+
           {/* Footer */}
           <AnimatePresence>
             {!isCollapsed && (
@@ -198,7 +220,9 @@ const Sidebar: React.FC = () => {
                   </div>
                   <div className="mt-2 flex justify-center">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="ml-2 text-xs text-green-600 font-medium">Online</span>
+                    <span className="ml-2 text-xs text-green-600 font-medium">
+                      Online
+                    </span>
                   </div>
                 </div>
               </motion.div>
@@ -233,7 +257,7 @@ const Sidebar: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Navigation */}
               <div className="flex-1 px-3 py-4">
                 <nav className="space-y-1">
@@ -260,10 +284,12 @@ const Sidebar: React.FC = () => {
                           <div className="flex items-center justify-between w-full">
                             <span>{item.name}</span>
                             {item.badge && (
-                              <span className={cn(
-                                "px-2 py-0.5 text-xs font-medium text-white rounded-full",
-                                item.badgeColor || "bg-blue-500"
-                              )}>
+                              <span
+                                className={cn(
+                                  "px-2 py-0.5 text-xs font-medium text-white rounded-full",
+                                  item.badgeColor || "bg-blue-500"
+                                )}
+                              >
                                 {item.badge}
                               </span>
                             )}
@@ -274,7 +300,7 @@ const Sidebar: React.FC = () => {
                   ))}
                 </nav>
               </div>
-              
+
               {/* Footer */}
               <div className="p-4 border-t border-gray-200">
                 <div className="text-center">
@@ -286,7 +312,9 @@ const Sidebar: React.FC = () => {
                   </div>
                   <div className="mt-2 flex justify-center">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="ml-2 text-xs text-green-600 font-medium">Online</span>
+                    <span className="ml-2 text-xs text-green-600 font-medium">
+                      Online
+                    </span>
                   </div>
                 </div>
               </div>

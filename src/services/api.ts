@@ -44,7 +44,7 @@ API.interceptors.response.use(
     } else if (error.response?.status === 404) {
       // Only show toast for 404 if it's not a token verification request
       if (!url?.includes('/v1/verify-token')) {
-        toast.error('Resource not found.');
+        // toast.error('Resource not found.');
       }
       // Don't show toast for verify-token 404 as it's handled gracefully in auth service
     } else if (error.response?.status >= 500) {

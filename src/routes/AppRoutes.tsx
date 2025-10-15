@@ -11,6 +11,7 @@ import Contacts from "../pages/Contacts";
 import CampaignsEnhanced from "../pages/CampaignsEnhanced";
 import CallHistory from "../pages/CallHistory";
 import InboundCalls from "../pages/InboundCalls";
+import OutboundCalls from "../pages/OutboundCalls";
 import AIInsights from "../pages/AIInsights";
 import KnowledgeBase from "../pages/KnowledgeBase";
 import Analytics from "../pages/Analytics";
@@ -85,6 +86,7 @@ const AppRoutes: React.FC = () => {
         <Route path="campaigns" element={<CampaignsEnhanced />} />
         <Route path="history" element={<CallHistory />} />
         <Route path="inbound" element={<InboundCalls />} />
+        <Route path="outbound" element={<OutboundCalls />} />
         <Route path="/ai">
           <Route index element={<AIInsights />} />
           <Route path=":callId" element={<AIInsights />} />{" "}

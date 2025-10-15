@@ -21,7 +21,7 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 px-4 lg:px-6 py-4 shadow-sm">
+    <header className="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 px-4 lg:px-6 py-4 shadow-sm sticky top-0 z-50">
       <div className="flex items-center justify-between">
         {/* Left side - Mobile menu button and search */}
         <div className="flex items-center space-x-4 flex-1">

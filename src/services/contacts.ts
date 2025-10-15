@@ -34,12 +34,13 @@ export const contactsService = {
     try {
       console.log('📞 Fetching uploaded contacts from CSV');
       const response = await apiClient.get<ContactApiResponse[]>('/v1/contacts/all');
+      console.log(response.data);
       
       // Convert CSV uploaded contacts to frontend Contact type
       const contacts: Contact[] = response.data.map((apiContact, index) => ({
         id: `csv-${index}`, // Generate ID since CSV contacts don't have IDs
-        name: apiContact.name,
-        phone: apiContact.phone_number,
+        name: "apiContact.name",
+        phone: "apiContact.phone_number",
         email: '', // Not provided by CSV upload API
         company: '', // Not provided by CSV upload API
         status: 'active' as const,
@@ -48,7 +49,7 @@ export const contactsService = {
       }));
       
       console.log(`✅ Fetched ${contacts.length} uploaded contacts from CSV`);
-      return contacts;
+      return [];
     } catch (error: any) {
       console.error('❌ Error fetching uploaded contacts:', error);
       throw error;
@@ -277,6 +278,7 @@ export const contactsService = {
           contact.phone.includes(filters.search!)
         );
       }
+      
       
       if (filters.status) {
         filteredContacts = filteredContacts.filter(contact => contact.status === filters.status);
