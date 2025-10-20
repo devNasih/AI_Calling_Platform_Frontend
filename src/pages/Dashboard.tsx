@@ -355,7 +355,7 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Campaigns"
-          value={analytics?.totalCampaigns || 15}
+          value={analytics?.totalCampaigns || 1500}
           icon={<Target className="h-6 w-6" />}
           change="+2 this week"
           changeType="positive"

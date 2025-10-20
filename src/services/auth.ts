@@ -4,70 +4,67 @@ import {
   AuthResponse, 
   User, 
   Token,
-  HTTPValidationError 
 } from '../types';
 
 export const authService = {
   // Login user
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    console.log('🔐 Login attempt...');
-    
-    if (!credentials.username || !credentials.password) {
-      throw new Error('Username and password are required');
-    }
+login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  console.log('🔐 Login attempt...');
 
-    try {
-      // Create form data as expected by the backend (application/x-www-form-urlencoded)
-      const formData = new URLSearchParams();
-      formData.append('grant_type', 'password');
-      formData.append('username', credentials.username.trim());
-      formData.append('password', credentials.password.trim());
-      formData.append('scope', ''); // Empty scope as shown in Swagger
-      
-      const response = await API.post<Token>('/v1/login', formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json'
-        }
-      });
-      
-      console.log('✅ Login successful');
-      console.log('✅ Response data:', response.data);
-      
-      // The backend returns access_token instead of token, so we need to adapt
-      const authResponse: AuthResponse = {
-        token: response.data.access_token,
-        user: {
-          id: '1', // You might need to get this from another endpoint
-          email: credentials.username,
-          name: 'User', // You might need to get this from another endpoint
-          role: 'admin', // You might need to get this from the token or another endpoint
-          createdAt: new Date().toISOString()
-        }
-      };
-      
-      // Store token and user data
-      localStorage.setItem('token', response.data.access_token);
-      localStorage.setItem('user', JSON.stringify(authResponse.user));
+  if (!credentials.username || !credentials.password) {
+    throw new Error('Username and password are required');
+  }
 
-      return authResponse;
-    } catch (error: any) {
-      console.error('❌ Login error:', error);
-      console.error('❌ Error response:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
-      
-      // Handle HTTPValidationError from backend
-      if (error.response?.data?.detail) {
-        const validationError = error.response.data as HTTPValidationError;
-        const errorMessage = validationError.detail
-          .map(err => `${err.loc.join('.')}: ${err.msg}`)
-          .join(', ');
-        throw new Error(`Validation Error: ${errorMessage}`);
+  try {
+ const payload = {
+  email: credentials.username.trim(),
+  password: credentials.password.trim()
+};
+
+    const response = await API.post<Token>('/v1/login', payload, {
+      headers: {
+        'Content-Type': 'application/json'
       }
-      
-      throw error;
+    });
+
+    console.log('✅ Login successful');
+    console.log('✅ Response data:', response.data);
+
+    // Map backend response to frontend AuthResponse format
+    const authResponse: AuthResponse = {
+      token: response.data.access_token,
+      user: {
+        id: response.data.user_id ?? 0,
+        email: response.data.email ?? credentials.username,
+        name: response.data.email?.split('@')[0] ?? 'User',
+        role: response.data.role ?? 'user',
+        createdAt: new Date().toISOString()
+      }
+    };
+
+    // Save token and user in localStorage
+    localStorage.setItem('token', authResponse.token);
+    localStorage.setItem('user', JSON.stringify(authResponse.user));
+
+    return authResponse;
+  } catch (error: any) {
+    console.error('❌ Login error:', error);
+    console.error('❌ Error response:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
+
+    if (error.response?.data?.detail) {
+      const detail = error.response.data.detail;
+      if (Array.isArray(detail)) {
+        const msg = detail.map((d: any) => `${d.loc.join('.')}: ${d.msg}`).join(', ');
+        throw new Error(`Validation Error: ${msg}`);
+      } else {
+        throw new Error(detail);
+      }
     }
-  },
+
+    throw new Error('Login failed. Please try again.');
+  }
+},
 
   // Logout user
   logout: (): void => {

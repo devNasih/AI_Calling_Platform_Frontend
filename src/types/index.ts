@@ -1,9 +1,9 @@
 // Authentication Types
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
-  role: 'admin' | 'agent';
+  role: string;
   createdAt: string;
 }
 
@@ -26,6 +26,10 @@ export interface Body_login_v1_login_post {
 export interface Token {
   access_token: string;
   token_type: string;
+  expires_in?: number;
+  user_id?: number;
+  email?: string;
+  role?: string;
 }
 
 export interface AuthResponse {
