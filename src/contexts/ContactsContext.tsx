@@ -3,8 +3,10 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useRef,
   ReactNode,
 } from "react";
+import { useLocation } from "react-router-dom";
 import { contactsService } from "../services/contacts_services";
 import { ContactsData, CreateContactPayload } from "../types/contacts_type";
 
@@ -29,15 +31,18 @@ const ContactsContext = createContext<ContactsContextType | undefined>(
 
 interface ContactsProviderProps {
   children: ReactNode;
+  shouldFetch?: boolean;
 }
 
 export const ContactsProvider: React.FC<ContactsProviderProps> = ({
   children,
 }) => {
   const [contacts, setContacts] = useState<ContactsData[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [uploadLoading, setUploadLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
+  const location = useLocation();
 
   const fetchContacts = async () => {
     setLoading(true);
@@ -45,6 +50,7 @@ export const ContactsProvider: React.FC<ContactsProviderProps> = ({
     try {
       const data = await contactsService.getContacts();
       setContacts(data);
+      hasFetchedRef.current = true;
     } catch (err: any) {
       setError(err.message || "Failed to fetch contacts");
     } finally {
@@ -150,7 +156,6 @@ export const ContactsProvider: React.FC<ContactsProviderProps> = ({
     try {
       console.log("📤 Uploading file:", file.name, "Size:", file.size, "bytes");
 
-      // Validate file
       if (!file.name.toLowerCase().endsWith(".csv")) {
         throw new Error("Please upload a CSV file");
       }
@@ -160,7 +165,6 @@ export const ContactsProvider: React.FC<ContactsProviderProps> = ({
       }
 
       if (file.size > 10 * 1024 * 1024) {
-        // 10MB limit
         throw new Error("File size should not exceed 10MB");
       }
 
@@ -168,7 +172,6 @@ export const ContactsProvider: React.FC<ContactsProviderProps> = ({
 
       console.log("✅ Upload successful:", result);
 
-      // Refresh contacts list
       await fetchContacts();
 
       return result;
@@ -196,8 +199,10 @@ export const ContactsProvider: React.FC<ContactsProviderProps> = ({
   };
 
   useEffect(() => {
-    fetchContacts();
-  }, []);
+    if (location.pathname === "/contacts" && !hasFetchedRef.current) {
+      fetchContacts();
+    }
+  }, [location.pathname]);
 
   return (
     <ContactsContext.Provider

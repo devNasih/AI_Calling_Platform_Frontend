@@ -3,8 +3,10 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useRef,
   ReactNode,
 } from "react";
+import { useLocation } from "react-router-dom";
 import {
   AnalyticsSummary,
   AnalyticsData,
@@ -27,19 +29,25 @@ interface AnalyticsContextType {
   filterAnalytics: (startDate: string, endDate: string) => Promise<void>;
 }
 
-// Create Context
 const AnalyticsContext = createContext<AnalyticsContextType | undefined>(
   undefined
 );
 
-export const AnalyticsProvider: React.FC<{ children: ReactNode }> = ({
+interface AnalyticsProviderProps {
+  children: ReactNode;
+  shouldFetch?: boolean;
+}
+
+export const AnalyticsProvider: React.FC<AnalyticsProviderProps> = ({
   children,
 }) => {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [data, setData] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [exporting, setExporting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
+  const location = useLocation();
 
   /** Fetch analytics summary + data */
   const fetchAnalytics = async () => {
@@ -54,8 +62,9 @@ export const AnalyticsProvider: React.FC<{ children: ReactNode }> = ({
 
       setSummary(summaryResponse);
       setData(dataResponse);
+      hasFetchedRef.current = true; // ✅ prevent future auto-fetches
     } catch (err) {
-      console.error("Failed to fetch analytics:", err);
+      console.error("❌ Failed to fetch analytics:", err);
       setError("Failed to load analytics data");
     } finally {
       setLoading(false);
@@ -70,13 +79,9 @@ export const AnalyticsProvider: React.FC<{ children: ReactNode }> = ({
   ) => {
     try {
       setExporting(true);
-      await AnalyticsService.downloadAnalyticsExport(
-        format,
-        startDate,
-        endDate
-      );
+      await AnalyticsService.downloadAnalyticsExport(format, startDate, endDate);
     } catch (err: any) {
-      console.error("Export failed:", err);
+      console.error("❌ Export failed:", err);
       setError(err.message || "Failed to export analytics data");
     } finally {
       setExporting(false);
@@ -94,12 +99,12 @@ export const AnalyticsProvider: React.FC<{ children: ReactNode }> = ({
         endDate
       );
 
-      // Optionally update summary/data with filtered metrics
+      // Update data + summary if applicable
       setData((prev) => ({
         ...prev,
         ...filteredData,
       }));
-      // If summary metrics exist in the filtered response, update summary too
+
       if (filteredData.metrics) {
         setSummary((prev) => ({
           ...prev,
@@ -107,17 +112,19 @@ export const AnalyticsProvider: React.FC<{ children: ReactNode }> = ({
         }));
       }
     } catch (err) {
-      console.error("Failed to filter analytics:", err);
+      console.error("❌ Failed to filter analytics:", err);
       setError("Failed to load filtered analytics data");
     } finally {
       setLoading(false);
     }
   };
 
-  /** Auto-load analytics on mount */
+  /** ✅ Fetch only once when visiting /analytics */
   useEffect(() => {
-    fetchAnalytics();
-  }, []);
+    if (location.pathname === "/analytics" && !hasFetchedRef.current) {
+      fetchAnalytics();
+    }
+  }, [location.pathname]);
 
   return (
     <AnalyticsContext.Provider
@@ -137,7 +144,7 @@ export const AnalyticsProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// Custom Hook
+/** Custom Hook */
 export const useAnalytics = (): AnalyticsContextType => {
   const context = useContext(AnalyticsContext);
   if (!context) {
