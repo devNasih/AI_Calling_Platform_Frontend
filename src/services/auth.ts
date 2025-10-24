@@ -9,8 +9,6 @@ import {
 export const authService = {
   // Login user
 login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  console.log('🔐 Login attempt...');
-
   if (!credentials.username || !credentials.password) {
     throw new Error('Username and password are required');
   }
@@ -26,10 +24,6 @@ login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
         'Content-Type': 'application/json'
       }
     });
-
-    console.log('✅ Login successful');
-    console.log('✅ Response data:', response.data);
-
     // Map backend response to frontend AuthResponse format
     const authResponse: AuthResponse = {
       token: response.data.access_token,
@@ -41,17 +35,13 @@ login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
         createdAt: new Date().toISOString()
       }
     };
-
-    // Save token and user in localStorage
     localStorage.setItem('token', authResponse.token);
     localStorage.setItem('user', JSON.stringify(authResponse.user));
-
     return authResponse;
   } catch (error: any) {
     console.error('❌ Login error:', error);
     console.error('❌ Error response:', error.response?.data);
     console.error('❌ Error status:', error.response?.status);
-
     if (error.response?.data?.detail) {
       const detail = error.response.data.detail;
       if (Array.isArray(detail)) {

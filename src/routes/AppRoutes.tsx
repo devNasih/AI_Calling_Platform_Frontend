@@ -4,11 +4,10 @@ import { useAuth } from "../contexts/AuthContext";
 import Layout from "../components/layout/Layout";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 
-// Import pages (we'll create these next)
 import Login from "../pages/Login";
-import Dashboard from "../pages/Dashboard";
-import Contacts from "../pages/Contacts";
-import CampaignsEnhanced from "../pages/CampaignsEnhanced";
+import Dashboard from "../pages/Dashboard/Dashboard";
+import Contacts from "../pages/Contacts/Contacts";
+import CampaignsEnhanced from "../pages/Campaigns/Campaigns";
 import CallHistory from "../pages/CallHistory";
 import InboundCalls from "../pages/InboundCalls";
 import OutboundCalls from "../pages/OutboundCalls";
@@ -16,8 +15,8 @@ import AIInsights from "../pages/AIInsights";
 import KnowledgeBase from "../pages/KnowledgeBase";
 import Analytics from "../pages/Analytics";
 import Settings from "../pages/Settings";
+import ProfilePage from "../pages/ProfilePage";
 
-// Protected Route Component
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
@@ -36,7 +35,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   return <>{children}</>;
 };
 
-// Public Route Component (redirects to dashboard if authenticated)
 const PublicRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -54,7 +52,6 @@ const PublicRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
-  // Show loading spinner while determining auth status
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -94,6 +91,7 @@ const AppRoutes: React.FC = () => {
         <Route path="knowledge" element={<KnowledgeBase />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       {/* Catch all route - redirect based on auth status */}

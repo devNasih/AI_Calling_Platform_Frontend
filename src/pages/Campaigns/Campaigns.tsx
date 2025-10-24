@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Play,
@@ -9,28 +9,33 @@ import {
   Clock,
   Edit,
   Trash2,
-  Search
-} from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import { Button } from '../components/common/Button';
-import Modal from '../components/common/Modal';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Select } from '../components/ui/select';
-import { Textarea } from '../components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { ContactApiResponse, CampaignDB, CampaignDBCreate } from '../types';
-import campaignsService from '../services/campaigns-new';
-import { contactsService } from '../services/contacts';
+  Search,
+} from "lucide-react";
+import { toast } from "react-hot-toast";
+import { Button } from "../../components/common/Button";
+import Modal from "../../components/common/Modal";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Select } from "../../components/ui/select";
+import { Textarea } from "../../components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { ContactApiResponse, CampaignDB, CampaignDBCreate } from "../../types";
+import campaignsService from "../../services/campaigns-new";
+import { contactsService } from "../../services/contacts_services";
 
 const CampaignsEnhanced: React.FC = () => {
   // State
   const [campaigns, setCampaigns] = useState<CampaignDB[]>([]);
   const [contacts, setContacts] = useState<ContactApiResponse[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -38,37 +43,39 @@ const CampaignsEnhanced: React.FC = () => {
   const [showStartModal, setShowStartModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
+
   // Selected items
-  const [selectedCampaign, setSelectedCampaign] = useState<CampaignDB | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<CampaignDB | null>(
+    null
+  );
 
   // Form data
   const [createFormData, setCreateFormData] = useState<CampaignDBCreate>({
-    name: '',
-    message: '',
-    region: 'global'
+    name: "",
+    message: "",
+    region: "global",
     // DO NOT include: status, created_at, id - backend will set these
   });
 
   const [editFormData, setEditFormData] = useState<CampaignDBCreate>({
-    name: '',
-    message: '',
-    region: 'global',
-    status: 'scheduled'
+    name: "",
+    message: "",
+    region: "global",
+    status: "scheduled",
   });
 
   const [startFormData, setStartFormData] = useState({
-    campaignName: '',
-    message: '',
-    region: 'global',
-    selectedContacts: [] as ContactApiResponse[]
+    campaignName: "",
+    message: "",
+    region: "global",
+    selectedContacts: [] as ContactApiResponse[],
   });
 
   const [scheduleFormData, setScheduleFormData] = useState({
-    name: '',
-    message: '',
-    region: 'global',
-    startTime: ''
+    name: "",
+    message: "",
+    region: "global",
+    startTime: "",
   });
 
   // Load data
@@ -78,34 +85,33 @@ const CampaignsEnhanced: React.FC = () => {
       const campaignsData = await campaignsService.getAllCampaigns();
       setCampaigns(campaignsData);
     } catch (error) {
-      console.error('Error loading campaigns:', error);
-      toast.error('Failed to load campaigns');
+      console.error("Error loading campaigns:", error);
+      toast.error("Failed to load campaigns");
     } finally {
       setLoading(false);
     }
   };
 
-const loadContacts = async () => {
+  const loadContacts = async () => {
     try {
-      console.log('🔄 Loading contacts for campaigns...');
+      console.log("🔄 Loading contacts for campaigns...");
       // Use getContacts() to get all contacts (both uploaded and individual)
-      const contactsData = await contactsService.getContacts();
-      console.log('📊 Raw contacts data:', contactsData);
-      
-      const mappedContacts: ContactApiResponse[] = contactsData.map(contact => ({
-        name: contact.name,
-        phone_number: contact.phone
-      }));
-      
-      console.log('✅ Mapped contacts:', mappedContacts);
-      setContacts(mappedContacts);
-      
-      if (mappedContacts.length === 0) {
-        console.warn('⚠️ No contacts found - please upload contacts first');
-      }
+      // const contactsData = await contactsService.getContacts();
+      // console.log('📊 Raw contacts data:', contactsData);
+
+      // const mappedContacts: ContactApiResponse[] = contactsData.map(contact => ({
+      //   name: contact.name,
+      //   phone_number: contact.phone
+      // }));
+
+      // console.log('✅ Mapped contacts:', mappedContacts);
+      // setContacts(mappedContacts);
+
+      // if (mappedContacts.length === 0) {
+      //   console.warn('⚠️ No contacts found - please upload contacts first');
+      // }
     } catch (error) {
-      console.error('❌ Error loading contacts:', error);
-      toast.error('Failed to load contacts');
+      console.error("❌ Error loading contacts:", error);
       setContacts([]); // Set empty array on error
     }
   };
@@ -116,40 +122,44 @@ const loadContacts = async () => {
   }, []);
 
   // Filtered campaigns
-  const filteredCampaigns = campaigns.filter(campaign => {
-    const matchesSearch = campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         campaign.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         campaign.region.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || campaign.status === statusFilter;
+  const filteredCampaigns = campaigns.filter((campaign) => {
+    const matchesSearch =
+      campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      campaign.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      campaign.region.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || campaign.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   // Campaign statistics
   const campaignStats = {
     total: campaigns.length,
-    scheduled: campaigns.filter(c => c.status === 'scheduled').length,
-    running: campaigns.filter(c => c.status === 'running').length,
-    paused: campaigns.filter(c => c.status === 'paused').length,
-    completed: campaigns.filter(c => c.status === 'completed').length
+    scheduled: campaigns.filter((c) => c.status === "scheduled").length,
+    running: campaigns.filter((c) => c.status === "running").length,
+    paused: campaigns.filter((c) => c.status === "paused").length,
+    completed: campaigns.filter((c) => c.status === "completed").length,
   };
 
   // Handlers
   const handleCreateCampaign = async () => {
     if (!createFormData.name || !createFormData.message) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields");
       return;
     }
 
     try {
       setLoading(true);
-      const newCampaign = await campaignsService.createCampaignDB(createFormData);
-      setCampaigns(prev => [...prev, newCampaign]);
+      const newCampaign = await campaignsService.createCampaignDB(
+        createFormData
+      );
+      setCampaigns((prev) => [...prev, newCampaign]);
       toast.success(`Campaign "${newCampaign.name}" created successfully!`);
       setShowCreateModal(false);
       resetCreateForm();
     } catch (error: any) {
-      console.error('Error creating campaign:', error);
-      toast.error(error.response?.data?.detail || 'Failed to create campaign');
+      console.error("Error creating campaign:", error);
+      toast.error(error.response?.data?.detail || "Failed to create campaign");
     } finally {
       setLoading(false);
     }
@@ -157,20 +167,25 @@ const loadContacts = async () => {
 
   const handleEditCampaign = async () => {
     if (!selectedCampaign || !editFormData.name || !editFormData.message) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields");
       return;
     }
 
     try {
       setLoading(true);
-      const updatedCampaign = await campaignsService.updateCampaign(selectedCampaign.id, editFormData);
-      setCampaigns(prev => prev.map(c => c.id === selectedCampaign.id ? updatedCampaign : c));
+      const updatedCampaign = await campaignsService.updateCampaign(
+        selectedCampaign.id,
+        editFormData
+      );
+      setCampaigns((prev) =>
+        prev.map((c) => (c.id === selectedCampaign.id ? updatedCampaign : c))
+      );
       toast.success(`Campaign "${updatedCampaign.name}" updated successfully!`);
       setShowEditModal(false);
       setSelectedCampaign(null);
     } catch (error: any) {
-      console.error('Error updating campaign:', error);
-      toast.error(error.response?.data?.detail || 'Failed to update campaign');
+      console.error("Error updating campaign:", error);
+      toast.error(error.response?.data?.detail || "Failed to update campaign");
     } finally {
       setLoading(false);
     }
@@ -182,21 +197,27 @@ const loadContacts = async () => {
     try {
       setLoading(true);
       await campaignsService.deleteCampaign(selectedCampaign.id);
-      setCampaigns(prev => prev.filter(c => c.id !== selectedCampaign.id));
-      toast.success(`Campaign "${selectedCampaign.name}" deleted successfully!`);
+      setCampaigns((prev) => prev.filter((c) => c.id !== selectedCampaign.id));
+      toast.success(
+        `Campaign "${selectedCampaign.name}" deleted successfully!`
+      );
       setShowDeleteModal(false);
       setSelectedCampaign(null);
     } catch (error: any) {
-      console.error('Error deleting campaign:', error);
-      toast.error(error.response?.data?.detail || 'Failed to delete campaign');
+      console.error("Error deleting campaign:", error);
+      toast.error(error.response?.data?.detail || "Failed to delete campaign");
     } finally {
       setLoading(false);
     }
   };
 
   const handleStartCampaign = async () => {
-    if (!startFormData.campaignName || !startFormData.message || startFormData.selectedContacts.length === 0) {
-      toast.error('Please fill in all required fields and select contacts');
+    if (
+      !startFormData.campaignName ||
+      !startFormData.message ||
+      startFormData.selectedContacts.length === 0
+    ) {
+      toast.error("Please fill in all required fields and select contacts");
       return;
     }
 
@@ -208,22 +229,28 @@ const loadContacts = async () => {
         startFormData.region,
         startFormData.selectedContacts
       );
-      
-      toast.success(`Campaign "${startFormData.campaignName}" started successfully!`);
+
+      toast.success(
+        `Campaign "${startFormData.campaignName}" started successfully!`
+      );
       setShowStartModal(false);
       resetStartForm();
       loadCampaigns(); // Reload to get updated status
     } catch (error: any) {
-      console.error('Error starting campaign:', error);
-      toast.error(error.response?.data?.detail || 'Failed to start campaign');
+      console.error("Error starting campaign:", error);
+      toast.error(error.response?.data?.detail || "Failed to start campaign");
     } finally {
       setLoading(false);
     }
   };
 
   const handleScheduleCampaign = async () => {
-    if (!scheduleFormData.name || !scheduleFormData.message || !scheduleFormData.startTime) {
-      toast.error('Please fill in all required fields');
+    if (
+      !scheduleFormData.name ||
+      !scheduleFormData.message ||
+      !scheduleFormData.startTime
+    ) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -235,29 +262,38 @@ const loadContacts = async () => {
         scheduleFormData.region,
         scheduleFormData.startTime
       );
-      
-      toast.success(`Campaign "${scheduleFormData.name}" scheduled successfully!`);
+
+      toast.success(
+        `Campaign "${scheduleFormData.name}" scheduled successfully!`
+      );
       setShowScheduleModal(false);
       resetScheduleForm();
       loadCampaigns(); // Reload to get updated campaigns
     } catch (error: any) {
-      console.error('Error scheduling campaign:', error);
-      toast.error(error.response?.data?.detail || 'Failed to schedule campaign');
+      console.error("Error scheduling campaign:", error);
+      toast.error(
+        error.response?.data?.detail || "Failed to schedule campaign"
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleControlCampaign = async (campaignId: number, action: 'pause' | 'resume' | 'stop') => {
+  const handleControlCampaign = async (
+    campaignId: number,
+    action: "pause" | "resume" | "stop"
+  ) => {
     try {
       setLoading(true);
       await campaignsService.controlCampaign(campaignId, action);
-      
+
       toast.success(`Campaign ${action}d successfully!`);
       loadCampaigns(); // Reload to get updated status
     } catch (error: any) {
       console.error(`Error ${action} campaign:`, error);
-      toast.error(error.response?.data?.detail || `Failed to ${action} campaign`);
+      toast.error(
+        error.response?.data?.detail || `Failed to ${action} campaign`
+      );
     } finally {
       setLoading(false);
     }
@@ -269,7 +305,7 @@ const loadContacts = async () => {
       name: campaign.name,
       message: campaign.message,
       region: campaign.region,
-      status: campaign.status
+      status: campaign.status,
     });
     setShowEditModal(true);
   };
@@ -279,16 +315,21 @@ const loadContacts = async () => {
     setShowDeleteModal(true);
   };
 
-  const handleContactSelection = (contact: ContactApiResponse, isSelected: boolean) => {
+  const handleContactSelection = (
+    contact: ContactApiResponse,
+    isSelected: boolean
+  ) => {
     if (isSelected) {
-      setStartFormData(prev => ({
+      setStartFormData((prev) => ({
         ...prev,
-        selectedContacts: [...prev.selectedContacts, contact]
+        selectedContacts: [...prev.selectedContacts, contact],
       }));
     } else {
-      setStartFormData(prev => ({
+      setStartFormData((prev) => ({
         ...prev,
-        selectedContacts: prev.selectedContacts.filter(c => c.phone_number !== contact.phone_number)
+        selectedContacts: prev.selectedContacts.filter(
+          (c) => c.phone_number !== contact.phone_number
+        ),
       }));
     }
   };
@@ -296,28 +337,28 @@ const loadContacts = async () => {
   // Reset forms
   const resetCreateForm = () => {
     setCreateFormData({
-      name: '',
-      message: '',
-      region: 'global'
+      name: "",
+      message: "",
+      region: "global",
       // DO NOT include: status, created_at, id - backend will set these
     });
   };
 
   const resetStartForm = () => {
     setStartFormData({
-      campaignName: '',
-      message: '',
-      region: 'global',
-      selectedContacts: []
+      campaignName: "",
+      message: "",
+      region: "global",
+      selectedContacts: [],
     });
   };
 
   const resetScheduleForm = () => {
     setScheduleFormData({
-      name: '',
-      message: '',
-      region: 'global',
-      startTime: ''
+      name: "",
+      message: "",
+      region: "global",
+      startTime: "",
     });
   };
 
@@ -327,17 +368,17 @@ const loadContacts = async () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'running':
-        return 'bg-green-100 text-green-800';
-      case 'paused':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'scheduled':
+      case "running":
+        return "bg-green-100 text-green-800";
+      case "paused":
+        return "bg-yellow-100 text-yellow-800";
+      case "completed":
+        return "bg-blue-100 text-blue-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      case "scheduled":
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -346,24 +387,14 @@ const loadContacts = async () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Campaign Management</h1>
-          <p className="text-gray-600">Create, manage, and execute your AI calling campaigns</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Campaign Management
+          </h1>
+          <p className="text-gray-600">
+            Create, manage, and execute your AI calling campaigns
+          </p>
         </div>
         <div className="flex space-x-2">
-          <Button
-            onClick={() => setShowScheduleModal(true)}
-            variant="outline"
-            leftIcon={<Calendar className="w-4 h-4" />}
-          >
-            Schedule Campaign
-          </Button>
-          <Button
-            onClick={() => setShowStartModal(true)}
-            variant="outline"
-            leftIcon={<Play className="w-4 h-4" />}
-          >
-            Start Campaign
-          </Button>
           <Button
             onClick={() => setShowCreateModal(true)}
             leftIcon={<Plus className="w-4 h-4" />}
@@ -377,14 +408,16 @@ const loadContacts = async () => {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Campaigns
+            </CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{campaignStats.total}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Scheduled</CardTitle>
@@ -394,7 +427,7 @@ const loadContacts = async () => {
             <div className="text-2xl font-bold">{campaignStats.scheduled}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Running</CardTitle>
@@ -404,7 +437,7 @@ const loadContacts = async () => {
             <div className="text-2xl font-bold">{campaignStats.running}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Paused</CardTitle>
@@ -414,7 +447,7 @@ const loadContacts = async () => {
             <div className="text-2xl font-bold">{campaignStats.paused}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
@@ -472,29 +505,44 @@ const loadContacts = async () => {
           ) : (
             <div className="space-y-4">
               {filteredCampaigns.map((campaign) => (
-                <div key={campaign.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                <div
+                  key={campaign.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                >
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="font-medium text-gray-900">{campaign.name}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
+                      <h3 className="font-medium text-gray-900">
+                        {campaign.name}
+                      </h3>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          campaign.status
+                        )}`}
+                      >
                         {campaign.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">{campaign.message}</p>
+                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                      {campaign.message}
+                    </p>
                     <div className="flex items-center space-x-4 text-xs text-gray-500">
                       <span>Region: {campaign.region}</span>
-                      <span>Created: {formatDateTime(campaign.created_at)}</span>
+                      <span>
+                        Created: {formatDateTime(campaign.created_at)}
+                      </span>
                       <span>ID: {campaign.id}</span>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     {/* Control buttons for active campaigns */}
-                    {campaign.status === 'running' && (
+                    {campaign.status === "running" && (
                       <>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleControlCampaign(campaign.id, 'pause')}
+                          onClick={() =>
+                            handleControlCampaign(campaign.id, "pause")
+                          }
                           leftIcon={<Pause className="w-4 h-4" />}
                         >
                           Pause
@@ -502,19 +550,23 @@ const loadContacts = async () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleControlCampaign(campaign.id, 'stop')}
+                          onClick={() =>
+                            handleControlCampaign(campaign.id, "stop")
+                          }
                           leftIcon={<Square className="w-4 h-4" />}
                         >
                           Stop
                         </Button>
                       </>
                     )}
-                    {campaign.status === 'paused' && (
+                    {campaign.status === "paused" && (
                       <>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleControlCampaign(campaign.id, 'resume')}
+                          onClick={() =>
+                            handleControlCampaign(campaign.id, "resume")
+                          }
                           leftIcon={<Play className="w-4 h-4" />}
                         >
                           Resume
@@ -522,16 +574,20 @@ const loadContacts = async () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleControlCampaign(campaign.id, 'stop')}
+                          onClick={() =>
+                            handleControlCampaign(campaign.id, "stop")
+                          }
                           leftIcon={<Square className="w-4 h-4" />}
                         >
                           Stop
                         </Button>
                       </>
                     )}
-                    
+
                     {/* Edit button for non-running campaigns */}
-                    {['scheduled', 'paused', 'completed', 'cancelled'].includes(campaign.status) && (
+                    {["scheduled", "paused", "completed", "cancelled"].includes(
+                      campaign.status
+                    ) && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -541,9 +597,11 @@ const loadContacts = async () => {
                         Edit
                       </Button>
                     )}
-                    
+
                     {/* Delete button for non-running campaigns */}
-                    {['scheduled', 'completed', 'cancelled'].includes(campaign.status) && (
+                    {["scheduled", "completed", "cancelled"].includes(
+                      campaign.status
+                    ) && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -575,7 +633,9 @@ const loadContacts = async () => {
             <Input
               id="createName"
               value={createFormData.name}
-              onChange={(e) => setCreateFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setCreateFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder="Enter campaign name"
             />
           </div>
@@ -585,7 +645,12 @@ const loadContacts = async () => {
             <Textarea
               id="createMessage"
               value={createFormData.message}
-              onChange={(e) => setCreateFormData(prev => ({ ...prev, message: e.target.value }))}
+              onChange={(e) =>
+                setCreateFormData((prev) => ({
+                  ...prev,
+                  message: e.target.value,
+                }))
+              }
               placeholder="Enter the message to be delivered"
               rows={4}
             />
@@ -595,7 +660,12 @@ const loadContacts = async () => {
             <Label htmlFor="createRegion">Region</Label>
             <Select
               value={createFormData.region}
-              onChange={(e) => setCreateFormData(prev => ({ ...prev, region: e.target.value }))}
+              onChange={(e) =>
+                setCreateFormData((prev) => ({
+                  ...prev,
+                  region: e.target.value,
+                }))
+              }
             >
               <option value="global">Global</option>
               <option value="us">United States</option>
@@ -612,7 +682,7 @@ const loadContacts = async () => {
               Cancel
             </Button>
             <Button onClick={handleCreateCampaign} disabled={loading}>
-              {loading ? <LoadingSpinner size="sm" /> : 'Create Campaign'}
+              {loading ? <LoadingSpinner size="sm" /> : "Create Campaign"}
             </Button>
           </div>
         </div>
@@ -631,7 +701,9 @@ const loadContacts = async () => {
             <Input
               id="editName"
               value={editFormData.name}
-              onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setEditFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder="Enter campaign name"
             />
           </div>
@@ -641,7 +713,12 @@ const loadContacts = async () => {
             <Textarea
               id="editMessage"
               value={editFormData.message}
-              onChange={(e) => setEditFormData(prev => ({ ...prev, message: e.target.value }))}
+              onChange={(e) =>
+                setEditFormData((prev) => ({
+                  ...prev,
+                  message: e.target.value,
+                }))
+              }
               placeholder="Enter the message to be delivered"
               rows={4}
             />
@@ -651,7 +728,9 @@ const loadContacts = async () => {
             <Label htmlFor="editRegion">Region</Label>
             <Select
               value={editFormData.region}
-              onChange={(e) => setEditFormData(prev => ({ ...prev, region: e.target.value }))}
+              onChange={(e) =>
+                setEditFormData((prev) => ({ ...prev, region: e.target.value }))
+              }
             >
               <option value="global">Global</option>
               <option value="us">United States</option>
@@ -665,7 +744,12 @@ const loadContacts = async () => {
             <Label htmlFor="editStatus">Status</Label>
             <Select
               value={editFormData.status}
-              onChange={(e) => setEditFormData(prev => ({ ...prev, status: e.target.value as any }))}
+              onChange={(e) =>
+                setEditFormData((prev) => ({
+                  ...prev,
+                  status: e.target.value as any,
+                }))
+              }
             >
               <option value="scheduled">Scheduled</option>
               <option value="running">Running</option>
@@ -680,7 +764,7 @@ const loadContacts = async () => {
               Cancel
             </Button>
             <Button onClick={handleEditCampaign} disabled={loading}>
-              {loading ? <LoadingSpinner size="sm" /> : 'Update Campaign'}
+              {loading ? <LoadingSpinner size="sm" /> : "Update Campaign"}
             </Button>
           </div>
         </div>
@@ -695,20 +779,20 @@ const loadContacts = async () => {
       >
         <div className="space-y-4">
           <p className="text-gray-600">
-            Are you sure you want to delete the campaign "{selectedCampaign?.name}"? 
-            This action cannot be undone.
+            Are you sure you want to delete the campaign "
+            {selectedCampaign?.name}"? This action cannot be undone.
           </p>
-          
+
           <div className="flex justify-end space-x-2 pt-4">
             <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleDeleteCampaign} 
+            <Button
+              onClick={handleDeleteCampaign}
               disabled={loading}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {loading ? <LoadingSpinner size="sm" /> : 'Delete Campaign'}
+              {loading ? <LoadingSpinner size="sm" /> : "Delete Campaign"}
             </Button>
           </div>
         </div>
@@ -727,7 +811,12 @@ const loadContacts = async () => {
             <Input
               id="startCampaignName"
               value={startFormData.campaignName}
-              onChange={(e) => setStartFormData(prev => ({ ...prev, campaignName: e.target.value }))}
+              onChange={(e) =>
+                setStartFormData((prev) => ({
+                  ...prev,
+                  campaignName: e.target.value,
+                }))
+              }
               placeholder="Enter campaign name"
             />
           </div>
@@ -737,7 +826,12 @@ const loadContacts = async () => {
             <Textarea
               id="startMessage"
               value={startFormData.message}
-              onChange={(e) => setStartFormData(prev => ({ ...prev, message: e.target.value }))}
+              onChange={(e) =>
+                setStartFormData((prev) => ({
+                  ...prev,
+                  message: e.target.value,
+                }))
+              }
               placeholder="Enter the message to be delivered"
               rows={4}
             />
@@ -747,7 +841,12 @@ const loadContacts = async () => {
             <Label htmlFor="startRegion">Region</Label>
             <Select
               value={startFormData.region}
-              onChange={(e) => setStartFormData(prev => ({ ...prev, region: e.target.value }))}
+              onChange={(e) =>
+                setStartFormData((prev) => ({
+                  ...prev,
+                  region: e.target.value,
+                }))
+              }
             >
               <option value="global">Global</option>
               <option value="us">United States</option>
@@ -758,14 +857,24 @@ const loadContacts = async () => {
           </div>
 
           <div>
-            <Label>Select Contacts * ({startFormData.selectedContacts.length} selected)</Label>
+            <Label>
+              Select Contacts * ({startFormData.selectedContacts.length}{" "}
+              selected)
+            </Label>
             <div className="max-h-48 overflow-y-auto border rounded-lg p-2 mt-1">
               {contacts.map((contact) => (
-                <label key={contact.phone_number} className="flex items-center space-x-2 p-2 hover:bg-gray-50">
+                <label
+                  key={contact.phone_number}
+                  className="flex items-center space-x-2 p-2 hover:bg-gray-50"
+                >
                   <input
                     type="checkbox"
-                    checked={startFormData.selectedContacts.some(c => c.phone_number === contact.phone_number)}
-                    onChange={(e) => handleContactSelection(contact, e.target.checked)}
+                    checked={startFormData.selectedContacts.some(
+                      (c) => c.phone_number === contact.phone_number
+                    )}
+                    onChange={(e) =>
+                      handleContactSelection(contact, e.target.checked)
+                    }
                     className="rounded"
                   />
                   <span className="text-sm">
@@ -775,7 +884,9 @@ const loadContacts = async () => {
               ))}
             </div>
             {contacts.length === 0 && (
-              <p className="text-sm text-gray-500 mt-2">No contacts available. Please upload contacts first.</p>
+              <p className="text-sm text-gray-500 mt-2">
+                No contacts available. Please upload contacts first.
+              </p>
             )}
           </div>
 
@@ -784,7 +895,7 @@ const loadContacts = async () => {
               Cancel
             </Button>
             <Button onClick={handleStartCampaign} disabled={loading}>
-              {loading ? <LoadingSpinner size="sm" /> : 'Start Campaign'}
+              {loading ? <LoadingSpinner size="sm" /> : "Start Campaign"}
             </Button>
           </div>
         </div>
@@ -803,7 +914,12 @@ const loadContacts = async () => {
             <Input
               id="scheduleName"
               value={scheduleFormData.name}
-              onChange={(e) => setScheduleFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setScheduleFormData((prev) => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
               placeholder="Enter campaign name"
             />
           </div>
@@ -813,7 +929,12 @@ const loadContacts = async () => {
             <Textarea
               id="scheduleMessage"
               value={scheduleFormData.message}
-              onChange={(e) => setScheduleFormData(prev => ({ ...prev, message: e.target.value }))}
+              onChange={(e) =>
+                setScheduleFormData((prev) => ({
+                  ...prev,
+                  message: e.target.value,
+                }))
+              }
               placeholder="Enter the message to be delivered"
               rows={4}
             />
@@ -823,7 +944,12 @@ const loadContacts = async () => {
             <Label htmlFor="scheduleRegion">Region</Label>
             <Select
               value={scheduleFormData.region}
-              onChange={(e) => setScheduleFormData(prev => ({ ...prev, region: e.target.value }))}
+              onChange={(e) =>
+                setScheduleFormData((prev) => ({
+                  ...prev,
+                  region: e.target.value,
+                }))
+              }
             >
               <option value="global">Global</option>
               <option value="us">United States</option>
@@ -839,16 +965,24 @@ const loadContacts = async () => {
               id="startTime"
               type="datetime-local"
               value={scheduleFormData.startTime}
-              onChange={(e) => setScheduleFormData(prev => ({ ...prev, startTime: e.target.value }))}
+              onChange={(e) =>
+                setScheduleFormData((prev) => ({
+                  ...prev,
+                  startTime: e.target.value,
+                }))
+              }
             />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => setShowScheduleModal(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowScheduleModal(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleScheduleCampaign} disabled={loading}>
-              {loading ? <LoadingSpinner size="sm" /> : 'Schedule Campaign'}
+              {loading ? <LoadingSpinner size="sm" /> : "Schedule Campaign"}
             </Button>
           </div>
         </div>
