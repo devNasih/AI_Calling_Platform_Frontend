@@ -1,153 +1,80 @@
-import React from "react";
+import React from 'react';
+import { Line } from 'react-chartjs-2';
+import { useDashboard } from '../../contexts/DashboardContext';
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  Chart as ChartJS,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
   Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-} from "recharts";
-import { DailyStats } from "../../types";
+  Legend,
+} from 'chart.js';
 
-interface CallsChartProps {
-  data: DailyStats[];
-  type?: "line" | "bar";
-  height?: number;
-}
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
 
-const CallsChart: React.FC<CallsChartProps> = ({
-  data,
-  type = "line",
-  height = 300,
-}) => {
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const CallsChart: React.FC = () => {
+  const { charts } = useDashboard();
+
+  // ✅ Safe access with fallback
+  const callData = charts?.charts?.calls;
+  const outbound = callData?.outbound || [];
+  const inbound = callData?.inbound || [];
+
+  // ✅ Build labels (use timestamps from outbound or inbound)
+  const labels =
+    outbound.length > 0
+      ? outbound.map((p) => new Date(p.timestamp).toLocaleDateString())
+      : inbound.length > 0
+      ? inbound.map((p) => new Date(p.timestamp).toLocaleDateString())
+      : Array.from({ length: 7 }, (_, i) => `Day ${i + 1}`); // fallback dummy labels
+
+  // ✅ Fallback to zero if no data
+  const outboundCounts = outbound.length > 0 ? outbound.map((p) => p.count) : Array(labels.length).fill(0);
+  const inboundCounts = inbound.length > 0 ? inbound.map((p) => p.count) : Array(labels.length).fill(0);
+
+  const data = {
+    labels,
+    datasets: [
+      {
+        label: 'Outbound Calls',
+        data: outboundCounts,
+        borderColor: '#3B82F6',
+        backgroundColor: 'rgba(59,130,246,0.2)',
+        fill: true,
+        tension: 0.4,
+      },
+      {
+        label: 'Inbound Calls',
+        data: inboundCounts,
+        borderColor: '#10B981',
+        backgroundColor: 'rgba(16,185,129,0.2)',
+        fill: true,
+        tension: 0.4,
+      },
+    ],
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-medium">{formatDate(label)}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }}>
-              {entry.name}: {entry.value}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  if (type === "bar") {
-    return (
-      <ResponsiveContainer width="100%" height={height}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickFormatter={formatDate} fontSize={12} />
-          <YAxis fontSize={12} />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="totalCalls" fill="#3B82F6" name="Total Calls" />
-          <Bar dataKey="successfulCalls" fill="#10B981" name="Successful" />
-          <Bar dataKey="failedCalls" fill="#EF4444" name="Failed" />
-        </BarChart>
-      </ResponsiveContainer>
-    );
-  }
-
-  return (
-    <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" tickFormatter={formatDate} fontSize={12} />
-        <YAxis fontSize={12} />
-        <Tooltip content={<CustomTooltip />} />
-        <Line
-          type="monotone"
-          dataKey="totalCalls"
-          stroke="#3B82F6"
-          strokeWidth={2}
-          name="Total Calls"
-        />
-        <Line
-          type="monotone"
-          dataKey="successfulCalls"
-          stroke="#10B981"
-          strokeWidth={2}
-          name="Successful"
-        />
-        <Line
-          type="monotone"
-          dataKey="failedCalls"
-          stroke="#EF4444"
-          strokeWidth={2}
-          name="Failed"
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  );
-};
-
-interface SentimentChartProps {
-  data: {
-    positive: number;
-    negative: number;
-    neutral: number;
-  };
-  height?: number;
-}
-
-export const SentimentChart: React.FC<SentimentChartProps> = ({
-  data,
-  height = 300,
-}) => {
-  const chartData = [
-    { name: "Positive", value: data.positive, color: "#10B981" },
-    { name: "Neutral", value: data.neutral, color: "#6B7280" },
-    { name: "Negative", value: data.negative, color: "#EF4444" },
-  ];
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-medium">{data.name}</p>
-          <p style={{ color: data.payload.color }}>Count: {data.value}</p>
-        </div>
-      );
-    }
-    return null;
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' as const },
+      tooltip: { mode: 'index' as const, intersect: false },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { precision: 0 },
+      },
+    },
   };
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <PieChart>
-        <Pie
-          data={chartData}
-          cx="50%"
-          cy="50%"
-          outerRadius={80}
-          dataKey="value"
-          label={({ name, percent }) =>
-            `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-          }
-        >
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
-          ))}
-        </Pie>
-        <Tooltip content={<CustomTooltip />} />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="p-4 bg-white rounded-xl shadow h-[400px]">
+      <h3 className="text-lg font-semibold mb-2">📞 Call Volume (Last 7 Days)</h3>
+      <Line data={data} options={options} />
+    </div>
   );
 };
 

@@ -3,7 +3,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export interface TableColumn<T> {
-  key: keyof T;
+  key: keyof T | string;
   label: string;
   sortable?: boolean;
   render?: (value: any, row: T) => React.ReactNode;

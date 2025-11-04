@@ -321,22 +321,6 @@ const CallHistory: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Call History</h1>
           <p className="text-gray-600">View and analyze your call logs</p>
         </div>
-        <div className="flex space-x-2">
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            leftIcon={<RefreshCw className="w-4 h-4" />}
-            disabled={loading}
-          >
-            Refresh
-          </Button>
-          <Button
-            variant="outline"
-            leftIcon={<Download className="w-4 h-4" />}
-          >
-            Export
-          </Button>
-        </div>
       </div>
 
       {/* Stats Cards */}

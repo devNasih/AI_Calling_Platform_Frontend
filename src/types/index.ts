@@ -41,16 +41,14 @@ export interface AuthResponse {
 export interface Contact {
   id: string;
   name: string;
-  phone: string;
-  email?: string;
+  phone_number: string;
+  tag: string;
+      country: string;
+    state: string;
+    city: string;
+  status?: "active" | "inactive" | "dnc";
   company?: string;
-  status: 'active' | 'inactive' | 'dnc';
-  createdAt: string;
-  updatedAt: string;
-  // Backend schema fields
-  tag?: string | null;
-  region?: string | null;
-  phone_number?: string; // For API compatibility
+  created_at?: string;
 }
 
 // Backend Contact schema (exact match)
@@ -59,7 +57,9 @@ export interface ContactSchema {
   name: string;
   phone_number: string;
   tag: string | null;
-  region: string | null;
+      country: string;
+    state: string;
+    city: string;
 }
 
 // API Response type that matches the backend
@@ -74,7 +74,9 @@ export interface ContactCreateRequest {
   name: string;
   phone_number: string;
   tag: string;
-  region: 'global' | string;
+      country: string;
+    state: string;
+    city: string;
 }
 
 export interface ContactCreateResponse {
@@ -82,7 +84,9 @@ export interface ContactCreateResponse {
   name: string;
   phone_number: string;
   tag: string;
-  region: string;
+  country: string;
+  state: string;
+  city: string;
 }
 
 export interface ContactUpload {

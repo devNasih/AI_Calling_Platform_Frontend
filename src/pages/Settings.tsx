@@ -4,14 +4,11 @@ import { Button } from '../components/common/Button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/common/Badge';
-import { useAuth } from '../contexts/AuthContext';
 
 const Settings: React.FC = () => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'profile' | 'api' | 'notifications' | 'system'>('profile');
+  const [activeTab, setActiveTab] = useState< 'api' | 'notifications' | 'system'>('api');
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: '👤' },
     { id: 'api', label: 'API Settings', icon: '🔧' },
     { id: 'notifications', label: 'Notifications', icon: '🔔' },
     { id: 'system', label: 'System Status', icon: '📊' }
@@ -19,63 +16,6 @@ const Settings: React.FC = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'profile':
-        return (
-          <div className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={user?.name || ''}
-                    className="mt-1"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={user?.email || ''}
-                    className="mt-1"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="role">Role</Label>
-                  <div className="mt-1">
-                    <Badge variant={user?.role === 'admin' ? 'default' : 'outline'}>
-                      {user?.role?.toUpperCase() || 'USER'}
-                    </Badge>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="joined">Member Since</Label>
-                  <Input
-                    id="joined"
-                    type="text"
-                    value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
-                    className="mt-1"
-                    readOnly
-                  />
-                </div>
-              </div>
-              <div className="mt-6">
-                <Button disabled>
-                  Update Profile
-                </Button>
-                <p className="text-sm text-gray-500 mt-2">
-                  Profile updates will be available in a future release.
-                </p>
-              </div>
-            </Card>
-          </div>
-        );
-
       case 'api':
         return (
           <div className="space-y-6">

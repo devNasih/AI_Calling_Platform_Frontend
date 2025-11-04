@@ -167,7 +167,7 @@ const Login: React.FC = () => {
                       Admin:
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Username: admin@example.com
+                      Username: admin@aicalling.com
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Password: admin123
