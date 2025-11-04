@@ -128,6 +128,9 @@ const Sidebar: React.FC = () => {
                   <div className="text-xs text-gray-500 font-medium">
                     Platform
                   </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Powered and Managed by Ravalent Technology
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -216,7 +219,7 @@ const Sidebar: React.FC = () => {
                     AI Calling Platform
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
-                    v2.0 Professional
+                    Powered and Managed by Ravalent Technology
                   </div>
                   <div className="mt-2 flex justify-center">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>

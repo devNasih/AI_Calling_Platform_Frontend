@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -20,7 +20,9 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
+  Loader2,
 } from "lucide-react";
+import { useAiInsights } from "../contexts/AiInsightContext";
 import {
   Card,
   CardContent,
@@ -30,131 +32,10 @@ import {
 import { Button } from "../components/common/Button";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 
-interface CallInsight {
-  id: string;
-  campaignId: string;
-  campaignName: string;
-  contactId: string;
-  contactName: string;
-  contactPhone: string;
-  status: "completed" | "failed" | "ongoing";
-  duration: number;
-  startedAt: string;
-  endedAt?: string;
-  transcript: string;
-  summary: string;
-  sentiment: "positive" | "negative" | "neutral";
-  sentimentScore: number;
-  keyInsights: string[];
-  callRecordingUrl?: string;
-  retryCount: number;
-  tags: string[];
-}
-
-// Mock data for demo - in real app this would come from API
-const mockCallInsight: CallInsight = {
-  id: "12345",
-  campaignId: "1",
-  campaignName: "Summer Sales Campaign",
-  contactId: "101",
-  contactName: "John Smith",
-  contactPhone: "+1 (555) 123-4567",
-  status: "completed",
-  duration: 186,
-  startedAt: "2025-08-27T14:25:00Z",
-  endedAt: "2025-08-27T14:28:06Z",
-  transcript: `
-AI Agent: Hello, this is Sarah from TechSolutions. Is this John Smith?
-
-Customer: Yes, this is John. 
-
-AI Agent: Hi John! I'm calling about our new cloud services that could help streamline your business operations. Do you have a couple of minutes to chat?
-
-Customer: Sure, I guess. What kind of services are you talking about?
-
-AI Agent: We offer automated data backup, real-time collaboration tools, and AI-powered analytics. Based on your business profile, I think our Enterprise package could save you about 30% on your current IT costs.
-
-Customer: That sounds interesting. Can you tell me more about the pricing?
-
-AI Agent: Absolutely! Our Enterprise package starts at $299 per month for up to 50 users. It includes 24/7 support, unlimited storage, and our AI analytics dashboard. Would you like me to send you a detailed proposal?
-
-Customer: Yes, that would be great. Can you email it to me?
-
-AI Agent: Of course! I'll send that over within the next hour. Is john.smith@company.com still the best email to reach you?
-
-Customer: Yes, that's correct.
-
-AI Agent: Perfect! You should receive the proposal shortly. Is there anything specific you'd like me to include or any questions I can answer right now?
-
-Customer: No, I think that covers it. I'll review the proposal and get back to you.
-
-AI Agent: Wonderful! Thank you for your time, John. Have a great day!
-
-Customer: You too, thanks.
-  `,
-  summary: `Call with John Smith regarding Enterprise cloud services. Customer showed strong interest in the offering, particularly the cost savings aspect (30% reduction). Requested detailed proposal to be sent via email. Positive engagement throughout the call with no objections raised. Follow-up proposal email scheduled.`,
-  sentiment: "positive",
-  sentimentScore: 0.82,
-  keyInsights: [
-    "Customer expressed genuine interest in cost savings",
-    "Ready to review proposals - high conversion potential",
-    "No technical objections or concerns raised",
-    "Familiar with existing cloud solutions",
-    "Decision maker for IT purchases",
-  ],
-  callRecordingUrl: "/api/recordings/12345.mp3",
-  retryCount: 0,
-  tags: ["interested", "decision-maker", "follow-up-needed", "enterprise"],
-};
-
-const mockCallsList: CallInsight[] = [
-  mockCallInsight,
-  {
-    ...mockCallInsight,
-    id: "12346",
-    contactName: "Sarah Johnson",
-    contactPhone: "+1 (555) 234-5678",
-    sentiment: "negative",
-    sentimentScore: 0.25,
-    summary:
-      "Customer was not interested in the product offering. Mentioned already having a solution in place.",
-    tags: ["not-interested", "existing-solution", "no-follow-up"],
-  },
-  {
-    ...mockCallInsight,
-    id: "12347",
-    contactName: "Mike Davis",
-    contactPhone: "+1 (555) 345-6789",
-    sentiment: "neutral",
-    sentimentScore: 0.55,
-    summary:
-      "Customer listened to the pitch but requested more time to think. No immediate decision made.",
-    tags: ["thinking", "follow-up-needed", "undecided"],
-  },
-];
-
 // AI Insights List Component
 const AIInsightsList: React.FC = () => {
   const navigate = useNavigate();
-  const [calls, setCalls] = useState<CallInsight[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadCalls = async () => {
-      try {
-        setLoading(true);
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setCalls(mockCallsList);
-      } catch (error) {
-        console.error("Error loading calls:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCalls();
-  }, []);
+  const { insightsData, loading, error, refreshInsights } = useAiInsights();
 
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -163,7 +44,7 @@ const AIInsightsList: React.FC = () => {
   };
 
   const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
+    switch (sentiment.toLowerCase()) {
       case "positive":
         return "text-green-600 bg-green-100";
       case "negative":
@@ -180,6 +61,28 @@ const AIInsightsList: React.FC = () => {
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-red-600">
+        <AlertCircle className="h-8 w-8 mb-2" />
+        <p className="mb-3">{error}</p>
+        <Button onClick={refreshInsights}>Retry</Button>
+      </div>
+    );
+  }
+
+  if (!insightsData || insightsData.insights.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+        <FileText className="h-8 w-8 mb-2" />
+        <p>No AI insights available.</p>
+      </div>
+    );
+  }
+
+  const summary = insightsData.summary;
+  const insights = insightsData.insights;
 
   return (
     <div className="space-y-6">
@@ -200,7 +103,7 @@ const AIInsightsList: React.FC = () => {
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -211,10 +114,10 @@ const AIInsightsList: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
-                    Processed Calls
+                    Total Insights
                   </p>
                   <p className="text-2xl font-bold text-blue-600 mt-1">
-                    {calls.length}
+                    {summary.total_insights}
                   </p>
                 </div>
                 <Brain className="h-8 w-8 text-blue-600" />
@@ -233,18 +136,35 @@ const AIInsightsList: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
-                    Positive Sentiment
+                    Positive
                   </p>
                   <p className="text-2xl font-bold text-green-600 mt-1">
-                    {Math.round(
-                      (calls.filter((c) => c.sentiment === "positive").length /
-                        calls.length) *
-                        100
-                    )}
-                    %
+                    {summary.sentiment_distribution.positive}
                   </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Card hover gradient>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Neutral
+                  </p>
+                  <p className="text-2xl font-bold text-yellow-600 mt-1">
+                    {summary.sentiment_distribution.neutral}
+                  </p>
+                </div>
+                <Minus className="h-8 w-8 text-yellow-600" />
               </div>
             </CardContent>
           </Card>
@@ -260,18 +180,13 @@ const AIInsightsList: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
-                    Avg Call Duration
+                    Negative
                   </p>
-                  <p className="text-2xl font-bold text-purple-600 mt-1">
-                    {formatDuration(
-                      Math.round(
-                        calls.reduce((acc, call) => acc + call.duration, 0) /
-                          calls.length
-                      )
-                    )}
+                  <p className="text-2xl font-bold text-red-600 mt-1">
+                    {summary.sentiment_distribution.negative}
                   </p>
                 </div>
-                <Clock className="h-8 w-8 text-purple-600" />
+                <TrendingDown className="h-8 w-8 text-red-600" />
               </div>
             </CardContent>
           </Card>
@@ -293,22 +208,20 @@ const AIInsightsList: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {calls.map((call, index) => (
+              {insights.map((call, index) => (
                 <motion.div
-                  key={call.id}
+                  key={call.call_id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index }}
                   className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => {
-                    return navigate(`/ai/${call.id}`);
-                  }}
+                  onClick={() => navigate(`/ai/${call.call_id}`)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900">
-                          {call.contactName}
+                          {call.contact_name || "Unknown Contact"}
                         </h3>
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSentimentColor(
@@ -319,33 +232,24 @@ const AIInsightsList: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mb-2">
-                        {call.contactPhone} • {call.campaignName}
+                        {call.phone_number} • Campaign ID: {call.campaign_id}
                       </p>
                       <p className="text-gray-700 mb-3 line-clamp-2">
-                        {call.summary}
+                        {call.ai_feedback || call.transcription.summary || "No summary available"}
                       </p>
-                      <div className="flex flex-wrap gap-1">
-                        {call.tags.slice(0, 3).map((tag, tagIndex) => (
-                          <span
-                            key={tagIndex}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {call.tags.length > 3 && (
-                          <span className="text-xs text-gray-500">
-                            +{call.tags.length - 3} more
-                          </span>
-                        )}
+                      <div className="flex items-center space-x-2 text-xs text-gray-500">
+                        <Clock className="h-3 w-3" />
+                        <span>{call.duration.formatted}</span>
+                        <span>•</span>
+                        <span className="capitalize">{call.call_status}</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end space-y-2 ml-4">
                       <div className="text-sm text-gray-500">
-                        {formatDuration(call.duration)}
+                        {call.duration.formatted}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {new Date(call.startedAt).toLocaleDateString()}
+                        {new Date(call.timestamps.initiated_at).toLocaleDateString()}
                       </div>
                       <Button variant="outline" size="sm">
                         View Details
@@ -365,39 +269,15 @@ const AIInsightsList: React.FC = () => {
 const AIInsights: React.FC = () => {
   const { callId } = useParams<{ callId: string }>();
   const navigate = useNavigate();
+  const { insightsData, loading, error } = useAiInsights();
 
-  const [callData, setCallData] = useState<CallInsight | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
-  // Debug logs
-  console.log("=== AIInsights Mounted ===");
-  console.log("callId:", callId);
-  console.log("window.location.pathname:", window.location.pathname);
-
-  // Load call data
-  useEffect(() => {
-    if (!callId) return;
-
-    const loadCallData = async () => {
-      try {
-        setLoading(true);
-        console.log("Loading call data for callId:", callId);
-
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        console.log("Setting mock call data");
-        setCallData(mockCallInsight); // Replace with real API call
-      } catch (error) {
-        console.error("Error loading call data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCallData();
-  }, [callId]);
+  // Find the specific call data
+  const callData = insightsData?.insights.find(
+    (insight) => insight.call_id.toString() === callId
+  );
 
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -406,7 +286,7 @@ const AIInsights: React.FC = () => {
   };
 
   const getSentimentIcon = (sentiment: string) => {
-    switch (sentiment) {
+    switch (sentiment.toLowerCase()) {
       case "positive":
         return <TrendingUp className="h-5 w-5 text-green-600" />;
       case "negative":
@@ -417,7 +297,7 @@ const AIInsights: React.FC = () => {
   };
 
   const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
+    switch (sentiment.toLowerCase()) {
       case "positive":
         return "text-green-600 bg-green-100";
       case "negative":
@@ -428,7 +308,7 @@ const AIInsights: React.FC = () => {
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "completed":
         return <CheckCircle className="h-5 w-5 text-green-600" />;
       case "failed":
@@ -438,12 +318,25 @@ const AIInsights: React.FC = () => {
     }
   };
 
-  const handlePlayPause = () => setIsPlaying(!isPlaying);
+  const handlePlayPause = () => {
+    if (!callData?.recording_url) return;
+    
+    if (isPlaying) {
+      audio?.pause();
+      setIsPlaying(false);
+    } else {
+      const newAudio = new Audio(callData.recording_url);
+      newAudio.play();
+      setAudio(newAudio);
+      setIsPlaying(true);
+      newAudio.onended = () => setIsPlaying(false);
+    }
+  };
 
   const downloadTranscript = () => {
     if (!callData) return;
     const element = document.createElement("a");
-    const file = new Blob([callData.transcript], { type: "text/plain" });
+    const file = new Blob([callData.transcription.full_transcript], { type: "text/plain" });
     element.href = URL.createObjectURL(file);
     element.download = `transcript-${callId}.txt`;
     document.body.appendChild(element);
@@ -464,6 +357,20 @@ const AIInsights: React.FC = () => {
   }
 
   // Render error
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-red-600">
+        <AlertCircle className="h-8 w-8 mb-2" />
+        <p className="mb-3">{error}</p>
+        <Button onClick={() => navigate("/ai")} variant="outline">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to AI Insights
+        </Button>
+      </div>
+    );
+  }
+
+  // Render not found
   if (!callData) {
     return (
       <div className="text-center py-12">
@@ -532,10 +439,10 @@ const AIInsights: React.FC = () => {
                   <User className="h-4 w-4 text-gray-400" />
                   <div>
                     <p className="font-medium text-gray-900">
-                      {callData.contactName}
+                      {callData.contact_name || "Unknown"}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {callData.contactPhone}
+                      {callData.phone_number}
                     </p>
                   </div>
                 </div>
@@ -547,10 +454,10 @@ const AIInsights: React.FC = () => {
                   <Target className="h-4 w-4 text-gray-400" />
                   <div>
                     <p className="font-medium text-gray-900">
-                      {callData.campaignName}
+                      Campaign {callData.campaign_id}
                     </p>
                     <p className="text-sm text-gray-500">
-                      ID: {callData.campaignId}
+                      ID: {callData.campaign_id}
                     </p>
                   </div>
                 </div>
@@ -564,12 +471,12 @@ const AIInsights: React.FC = () => {
                   <Clock className="h-4 w-4 text-gray-400" />
                   <div>
                     <p className="font-medium text-gray-900">
-                      {formatDuration(callData.duration)}
+                      {callData.duration.formatted}
                     </p>
                     <div className="flex items-center space-x-1">
-                      {getStatusIcon(callData.status)}
+                      {getStatusIcon(callData.call_status)}
                       <span className="text-sm text-gray-500 capitalize">
-                        {callData.status}
+                        {callData.call_status}
                       </span>
                     </div>
                   </div>
@@ -589,9 +496,6 @@ const AIInsights: React.FC = () => {
                       {callData.sentiment.charAt(0).toUpperCase() +
                         callData.sentiment.slice(1)}
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Score: {(callData.sentimentScore * 100).toFixed(0)}%
-                    </p>
                   </div>
                 </div>
               </div>
@@ -617,24 +521,28 @@ const AIInsights: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-center py-8 bg-gray-50 rounded-lg">
-                  <Button
-                    onClick={handlePlayPause}
-                    variant="default"
-                    size="lg"
-                    leftIcon={
-                      isPlaying ? (
-                        <Pause className="h-6 w-6" />
-                      ) : (
-                        <Play className="h-6 w-6" />
-                      )
-                    }
-                  >
-                    {isPlaying ? "Pause Recording" : "Play Recording"}
-                  </Button>
+                  {callData.recording_url ? (
+                    <Button
+                      onClick={handlePlayPause}
+                      variant="default"
+                      size="lg"
+                      leftIcon={
+                        isPlaying ? (
+                          <Pause className="h-6 w-6" />
+                        ) : (
+                          <Play className="h-6 w-6" />
+                        )
+                      }
+                    >
+                      {isPlaying ? "Pause Recording" : "Play Recording"}
+                    </Button>
+                  ) : (
+                    <p className="text-gray-500">No recording available</p>
+                  )}
                 </div>
                 <div className="text-center text-sm text-gray-500">
-                  Duration: {formatDuration(callData.duration)} • Started:{" "}
-                  {new Date(callData.startedAt).toLocaleString()}
+                  Duration: {callData.duration.formatted} • Started:{" "}
+                  {new Date(callData.timestamps.initiated_at).toLocaleString()}
                 </div>
               </div>
             </CardContent>
@@ -657,18 +565,8 @@ const AIInsights: React.FC = () => {
               <div className="space-y-4">
                 <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
                   <p className="text-gray-700 leading-relaxed">
-                    {callData.summary}
+                    {callData.ai_feedback || callData.transcription.summary || "No summary available"}
                   </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {callData.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
-                    >
-                      {tag}
-                    </span>
-                  ))}
                 </div>
               </div>
             </CardContent>
@@ -676,7 +574,7 @@ const AIInsights: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Key Insights */}
+      {/* Conversation Metrics */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -686,27 +584,46 @@ const AIInsights: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Heart className="h-5 w-5 text-pink-600" />
-              <span>Key Insights</span>
+              <span>Conversation Metrics</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {callData.keyInsights.map((insight, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-bold text-blue-600">
-                      {index + 1}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700">{insight}</p>
-                </motion.div>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-bold text-blue-600">1</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">AI Responses</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {callData.conversation_metrics.ai_response_count}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-bold text-blue-600">2</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Human Detected</p>
+                  <p className={`text-lg font-semibold ${callData.conversation_metrics.human_detected ? 'text-green-600' : 'text-gray-500'}`}>
+                    {callData.conversation_metrics.human_detected ? "Yes" : "No"}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-bold text-blue-600">3</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Conversation State</p>
+                  <p className="text-lg font-semibold text-gray-900 capitalize">
+                    {callData.conversation_metrics.conversation_state}
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -728,7 +645,7 @@ const AIInsights: React.FC = () => {
           <CardContent>
             <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
               <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
-                {callData.transcript}
+                {callData.transcription.full_transcript || "No transcript available"}
               </pre>
             </div>
           </CardContent>

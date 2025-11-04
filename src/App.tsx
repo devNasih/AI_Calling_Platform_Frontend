@@ -8,6 +8,7 @@ import { AnalyticsProvider } from "./contexts/AnalyticsContext";
 import { KnowledgeBaseProvider } from "./contexts/KnowledgeBaseContext";
 import { CampaignProvider } from "./contexts/CampaignContext";
 import { OutboundCallsProvider } from "./contexts/OutboundCallsContext";
+import { AiInsightsProvider } from "./contexts/AiInsightContext";
 
 function App() {
   return (
@@ -16,28 +17,43 @@ function App() {
         <ContactsProvider>
           <AnalyticsProvider>
             <KnowledgeBaseProvider>
-              <DashboardProvider>
-                <CampaignProvider>
+              <CampaignProvider>
+                <DashboardProvider>
                   <OutboundCallsProvider>
-                    <div className="min-h-screen bg-gray-50">
-                      <AppRoutes />
-                      <Toaster
-                        position="top-right"
-                        toastOptions={{
-                          duration: 4000,
-                          style: {
-                            background: "#363636",
-                            color: "#fff",
-                          },
-                        }}
-                      />
-                    </div>
+                    <AiInsightsProvider>
+                      <div className="min-h-screen bg-gray-50">
+                        <AppRoutes />
+                        <Toaster
+                          position="top-right"
+                          toastOptions={{
+                            duration: 4000,
+                            style: {
+                              background: "#363636",
+                              color: "#fff",
+                            },
+                          }}
+                        />
+                      </div>
+                    </AiInsightsProvider>
+                  </OutboundCallsProvider>
+                </DashboardProvider>
+              </CampaignProvider>
+            </KnowledgeBaseProvider>
+          </AnalyticsProvider>
+        </ContactsProvider>
+        {/* 
+          
+            
+              
+                
+                  
+                    
                   </OutboundCallsProvider>
                 </CampaignProvider>
               </DashboardProvider>
             </KnowledgeBaseProvider>
           </AnalyticsProvider>
-        </ContactsProvider>
+        </ContactsProvider> */}
       </AuthProvider>
     </Router>
   );
