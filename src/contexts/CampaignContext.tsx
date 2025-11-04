@@ -76,7 +76,7 @@ export const CampaignProvider: React.FC<{ children: ReactNode }> = ({
       setLoading(true);
       setError(null);
       const newCampaign = await CampaignService.createCampaign(campaignData);
-      setCampaigns((prev) => [...prev, newCampaign]);
+      await fetchCampaigns();
       return newCampaign;
     } catch (err: any) {
       console.error("Failed to create campaign:", err);
