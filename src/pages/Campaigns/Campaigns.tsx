@@ -48,15 +48,18 @@ const CampaignsEnhanced: React.FC = () => {
   const [controllingId, setControllingId] = useState<number | null>(null);
 
   /** 🔍 Filters */
-  const filteredCampaigns = campaigns.filter((campaign) => {
-    const matchesSearch =
-      campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      campaign.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      campaign.city.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || campaign.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+const filteredCampaigns = campaigns.filter((campaign) => {
+  const matchesSearch =
+    (campaign.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+    (campaign.description?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+    (campaign.city?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+
+  const matchesStatus =
+    statusFilter === "all" || campaign.status === statusFilter;
+
+  return matchesSearch && matchesStatus;
+});
+
 
   /** 📊 Stats */
   const campaignStats = {
@@ -331,9 +334,9 @@ const CampaignsEnhanced: React.FC = () => {
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredCampaigns.map((campaign) => (
+            {filteredCampaigns.map((campaign,index) => (
               <div
-                key={campaign.id}
+                key={campaign.id || index}
                 className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-all border border-gray-100 overflow-hidden"
               >
                 <div

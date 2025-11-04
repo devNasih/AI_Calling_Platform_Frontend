@@ -155,7 +155,7 @@ const CampaignModal: React.FC<CampaignModalProps> = ({
       onClose();
       onSaved();
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Failed to save campaign");
+      console.error("Failed to create campaign:", err);
     } finally {
       setLoading(false);
     }
