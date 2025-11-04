@@ -1,992 +1,500 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Plus,
   Play,
   Pause,
   Square,
   Calendar,
-  Activity,
-  Clock,
   Edit,
   Trash2,
   Search,
+  BarChart3,
+  Users,
+  MapPin,
+  Clock,
+  Activity,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
-import { Button } from "../../components/common/Button";
-import Modal from "../../components/common/Modal";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Select } from "../../components/ui/select";
-import { Textarea } from "../../components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../components/ui/card";
-import { ContactApiResponse, CampaignDB, CampaignDBCreate } from "../../types";
-import campaignsService from "../../services/campaigns-new";
-import { contactsService } from "../../services/contacts_services";
+import { useCampaigns } from "../../contexts/CampaignContext";
+import { CampaignType } from "../../types/campaign_type";
+import CreateCampaignModal from "../../components/campaigns/CreateCampaignModal";
+import DeleteModal from "../../components/common/DeleteModel";
 
 const CampaignsEnhanced: React.FC = () => {
-  // State
-  const [campaigns, setCampaigns] = useState<CampaignDB[]>([]);
-  const [contacts, setContacts] = useState<ContactApiResponse[]>([]);
-  const [loading, setLoading] = useState(false);
+  const {
+    campaigns,
+    loading,
+    deleting,
+    error,
+    refreshCampaigns,
+    startCampaign,
+    controlCampaign,
+    deleteCampaign,
+  } = useCampaigns();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showStartModal, setShowStartModal] = useState(false);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  // Selected items
-  const [selectedCampaign, setSelectedCampaign] = useState<CampaignDB | null>(
+  const [loadingAction, setLoadingAction] = useState<{
+    id: number;
+    action: string;
+  } | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<CampaignType | null>(
     null
   );
+  const [controllingId, setControllingId] = useState<number | null>(null);
 
-  // Form data
-  const [createFormData, setCreateFormData] = useState<CampaignDBCreate>({
-    name: "",
-    message: "",
-    region: "global",
-    // DO NOT include: status, created_at, id - backend will set these
-  });
-
-  const [editFormData, setEditFormData] = useState<CampaignDBCreate>({
-    name: "",
-    message: "",
-    region: "global",
-    status: "scheduled",
-  });
-
-  const [startFormData, setStartFormData] = useState({
-    campaignName: "",
-    message: "",
-    region: "global",
-    selectedContacts: [] as ContactApiResponse[],
-  });
-
-  const [scheduleFormData, setScheduleFormData] = useState({
-    name: "",
-    message: "",
-    region: "global",
-    startTime: "",
-  });
-
-  // Load data
-  const loadCampaigns = async () => {
-    try {
-      setLoading(true);
-      const campaignsData = await campaignsService.getAllCampaigns();
-      setCampaigns(campaignsData);
-    } catch (error) {
-      console.error("Error loading campaigns:", error);
-      toast.error("Failed to load campaigns");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadContacts = async () => {
-    try {
-      console.log("🔄 Loading contacts for campaigns...");
-      // Use getContacts() to get all contacts (both uploaded and individual)
-      // const contactsData = await contactsService.getContacts();
-      // console.log('📊 Raw contacts data:', contactsData);
-
-      // const mappedContacts: ContactApiResponse[] = contactsData.map(contact => ({
-      //   name: contact.name,
-      //   phone_number: contact.phone
-      // }));
-
-      // console.log('✅ Mapped contacts:', mappedContacts);
-      // setContacts(mappedContacts);
-
-      // if (mappedContacts.length === 0) {
-      //   console.warn('⚠️ No contacts found - please upload contacts first');
-      // }
-    } catch (error) {
-      console.error("❌ Error loading contacts:", error);
-      setContacts([]); // Set empty array on error
-    }
-  };
-
-  useEffect(() => {
-    loadCampaigns();
-    loadContacts();
-  }, []);
-
-  // Filtered campaigns
+  /** 🔍 Filters */
   const filteredCampaigns = campaigns.filter((campaign) => {
     const matchesSearch =
       campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      campaign.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      campaign.region.toLowerCase().includes(searchTerm.toLowerCase());
+      campaign.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      campaign.city.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || campaign.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  // Campaign statistics
+  /** 📊 Stats */
   const campaignStats = {
     total: campaigns.length,
     scheduled: campaigns.filter((c) => c.status === "scheduled").length,
-    running: campaigns.filter((c) => c.status === "running").length,
+    running: campaigns.filter(
+      (c) => c.status === "running" || c.status === "active"
+    ).length,
     paused: campaigns.filter((c) => c.status === "paused").length,
     completed: campaigns.filter((c) => c.status === "completed").length,
   };
 
-  // Handlers
-  const handleCreateCampaign = async () => {
-    if (!createFormData.name || !createFormData.message) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
+  const handlePlayCampaign = async (campaign: CampaignType) => {
     try {
-      setLoading(true);
-      const newCampaign = await campaignsService.createCampaignDB(
-        createFormData
-      );
-      setCampaigns((prev) => [...prev, newCampaign]);
-      toast.success(`Campaign "${newCampaign.name}" created successfully!`);
-      setShowCreateModal(false);
-      resetCreateForm();
-    } catch (error: any) {
-      console.error("Error creating campaign:", error);
-      toast.error(error.response?.data?.detail || "Failed to create campaign");
+      setLoadingAction({ id: campaign.id, action: "play" });
+      if (campaign.status === "draft" || campaign.status === "scheduled") {
+        await startCampaign(campaign.id);
+      } else if (campaign.status === "paused") {
+        await controlCampaign(campaign.id, "resume");
+      }
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   };
 
-  const handleEditCampaign = async () => {
-    if (!selectedCampaign || !editFormData.name || !editFormData.message) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
+  const handlePauseCampaign = async (id: number) => {
     try {
-      setLoading(true);
-      const updatedCampaign = await campaignsService.updateCampaign(
-        selectedCampaign.id,
-        editFormData
-      );
-      setCampaigns((prev) =>
-        prev.map((c) => (c.id === selectedCampaign.id ? updatedCampaign : c))
-      );
-      toast.success(`Campaign "${updatedCampaign.name}" updated successfully!`);
-      setShowEditModal(false);
-      setSelectedCampaign(null);
-    } catch (error: any) {
-      console.error("Error updating campaign:", error);
-      toast.error(error.response?.data?.detail || "Failed to update campaign");
+      setLoadingAction({ id, action: "pause" });
+      await controlCampaign(id, "pause");
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   };
 
+  const handleStopCampaign = async (id: number) => {
+    try {
+      setLoadingAction({ id, action: "stop" });
+      await controlCampaign(id, "stop");
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  /** 🗑️ Handle Delete */
   const handleDeleteCampaign = async () => {
     if (!selectedCampaign) return;
-
     try {
-      setLoading(true);
-      await campaignsService.deleteCampaign(selectedCampaign.id);
-      setCampaigns((prev) => prev.filter((c) => c.id !== selectedCampaign.id));
-      toast.success(
-        `Campaign "${selectedCampaign.name}" deleted successfully!`
-      );
+      await deleteCampaign(selectedCampaign.id);
       setShowDeleteModal(false);
       setSelectedCampaign(null);
-    } catch (error: any) {
-      console.error("Error deleting campaign:", error);
-      toast.error(error.response?.data?.detail || "Failed to delete campaign");
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      alert(`Failed to delete campaign: ${err.message || "Unknown error"}`);
     }
   };
 
-  const handleStartCampaign = async () => {
-    if (
-      !startFormData.campaignName ||
-      !startFormData.message ||
-      startFormData.selectedContacts.length === 0
-    ) {
-      toast.error("Please fill in all required fields and select contacts");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await campaignsService.startCampaign(
-        startFormData.campaignName,
-        startFormData.message,
-        startFormData.region,
-        startFormData.selectedContacts
-      );
-
-      toast.success(
-        `Campaign "${startFormData.campaignName}" started successfully!`
-      );
-      setShowStartModal(false);
-      resetStartForm();
-      loadCampaigns(); // Reload to get updated status
-    } catch (error: any) {
-      console.error("Error starting campaign:", error);
-      toast.error(error.response?.data?.detail || "Failed to start campaign");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleScheduleCampaign = async () => {
-    if (
-      !scheduleFormData.name ||
-      !scheduleFormData.message ||
-      !scheduleFormData.startTime
-    ) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await campaignsService.scheduleCampaign(
-        scheduleFormData.name,
-        scheduleFormData.message,
-        scheduleFormData.region,
-        scheduleFormData.startTime
-      );
-
-      toast.success(
-        `Campaign "${scheduleFormData.name}" scheduled successfully!`
-      );
-      setShowScheduleModal(false);
-      resetScheduleForm();
-      loadCampaigns(); // Reload to get updated campaigns
-    } catch (error: any) {
-      console.error("Error scheduling campaign:", error);
-      toast.error(
-        error.response?.data?.detail || "Failed to schedule campaign"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleControlCampaign = async (
-    campaignId: number,
-    action: "pause" | "resume" | "stop"
-  ) => {
-    try {
-      setLoading(true);
-      await campaignsService.controlCampaign(campaignId, action);
-
-      toast.success(`Campaign ${action}d successfully!`);
-      loadCampaigns(); // Reload to get updated status
-    } catch (error: any) {
-      console.error(`Error ${action} campaign:`, error);
-      toast.error(
-        error.response?.data?.detail || `Failed to ${action} campaign`
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEditClick = (campaign: CampaignDB) => {
-    setSelectedCampaign(campaign);
-    setEditFormData({
-      name: campaign.name,
-      message: campaign.message,
-      region: campaign.region,
-      status: campaign.status,
-    });
-    setShowEditModal(true);
-  };
-
-  const handleDeleteClick = (campaign: CampaignDB) => {
+  /** Modal Handlers */
+  const handleOpenDeleteModal = (campaign: CampaignType) => {
     setSelectedCampaign(campaign);
     setShowDeleteModal(true);
   };
-
-  const handleContactSelection = (
-    contact: ContactApiResponse,
-    isSelected: boolean
-  ) => {
-    if (isSelected) {
-      setStartFormData((prev) => ({
-        ...prev,
-        selectedContacts: [...prev.selectedContacts, contact],
-      }));
-    } else {
-      setStartFormData((prev) => ({
-        ...prev,
-        selectedContacts: prev.selectedContacts.filter(
-          (c) => c.phone_number !== contact.phone_number
-        ),
-      }));
+  const handleCloseDeleteModal = () => {
+    if (!deleting) {
+      setShowDeleteModal(false);
+      setSelectedCampaign(null);
     }
   };
 
-  // Reset forms
-  const resetCreateForm = () => {
-    setCreateFormData({
-      name: "",
-      message: "",
-      region: "global",
-      // DO NOT include: status, created_at, id - backend will set these
+  /** 🎨 UI Helpers */
+  const getStatusBadge = (status: string) => {
+    const styles = {
+      active: "bg-emerald-500 text-white",
+      running: "bg-emerald-500 text-white",
+      paused: "bg-amber-500 text-white",
+      completed: "bg-blue-500 text-white",
+      cancelled: "bg-red-500 text-white",
+      stopped: "bg-red-500 text-white",
+      scheduled: "bg-violet-500 text-white",
+    };
+    return styles[status as keyof typeof styles] || "bg-gray-500 text-white";
+  };
+
+  const getStatusGradient = (status: string) => {
+    const gradients = {
+      active: "from-emerald-400 to-emerald-600",
+      running: "from-emerald-400 to-emerald-600",
+      paused: "from-amber-400 to-amber-600",
+      completed: "from-blue-400 to-blue-600",
+      cancelled: "from-red-400 to-red-600",
+      stopped: "from-red-400 to-red-600",
+      scheduled: "from-violet-400 to-violet-600",
+    };
+    return (
+      gradients[status as keyof typeof gradients] || "from-gray-400 to-gray-600"
+    );
+  };
+
+  const formatDateTime = (date: string) =>
+    new Date(date).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
-  };
 
-  const resetStartForm = () => {
-    setStartFormData({
-      campaignName: "",
-      message: "",
-      region: "global",
-      selectedContacts: [],
-    });
-  };
+  const shouldShowPlayButton = (status: string) =>
+    ["scheduled", "paused", "draft"].includes(status);
+  const shouldShowPauseButton = (status: string) =>
+    ["running", "active"].includes(status);
+  const isStopped = (status: string) =>
+    ["stopped", "cancelled", "completed"].includes(status);
 
-  const resetScheduleForm = () => {
-    setScheduleFormData({
-      name: "",
-      message: "",
-      region: "global",
-      startTime: "",
-    });
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "running":
-        return "bg-green-100 text-green-800";
-      case "paused":
-        return "bg-yellow-100 text-yellow-800";
-      case "completed":
-        return "bg-blue-100 text-blue-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      case "scheduled":
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Campaign Management
-          </h1>
-          <p className="text-gray-600">
-            Create, manage, and execute your AI calling campaigns
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            leftIcon={<Plus className="w-4 h-4" />}
+  /** 🧾 Stat Card Component */
+  const StatCard = ({ label, count, icon: Icon, gradient }: any) => (
+    <div className="relative overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer border border-gray-100">
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+      />
+      <div className="p-6 relative">
+        <div className="flex items-center justify-between mb-3">
+          <div
+            className={`p-2.5 rounded-lg bg-gradient-to-br ${gradient} bg-opacity-10`}
           >
-            Create Campaign
-          </Button>
+            <Icon className="w-5 h-5 text-gray-700" />
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-gray-600 capitalize">
+            {label}
+          </p>
+          <p className="text-3xl font-bold text-gray-900">{count}</p>
         </div>
       </div>
+    </div>
+  );
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Campaigns
-            </CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{campaignStats.total}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Scheduled</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{campaignStats.scheduled}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Running</CardTitle>
-            <Play className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{campaignStats.running}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Paused</CardTitle>
-            <Pause className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{campaignStats.paused}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <Square className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{campaignStats.completed}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters and Search */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Campaigns</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search campaigns..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="w-48">
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="all">All Status</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="running">Running</option>
-                <option value="paused">Paused</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </Select>
-            </div>
+  /** 🧭 Error & Loading */
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
+        <div className="bg-white p-8 rounded-xl shadow-md text-center border border-red-200">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trash2 className="w-8 h-8 text-red-600" />
           </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            Error Loading Campaigns
+          </h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={refreshCampaigns}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-          {/* Campaigns List */}
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <LoadingSpinner />
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">Loading campaigns...</p>
+        </div>
+      </div>
+    );
+  }
+
+  /** 🖥️ MAIN UI */
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              Campaign Management
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Create, manage, and execute your AI calling campaigns
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:scale-105 transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            Create Campaign
+          </button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <StatCard
+            label="Total"
+            count={campaignStats.total}
+            icon={BarChart3}
+            gradient="from-blue-400 to-blue-600"
+          />
+          <StatCard
+            label="Scheduled"
+            count={campaignStats.scheduled}
+            icon={Calendar}
+            gradient="from-violet-400 to-violet-600"
+          />
+          <StatCard
+            label="Running"
+            count={campaignStats.running}
+            icon={Activity}
+            gradient="from-emerald-400 to-emerald-600"
+          />
+          <StatCard
+            label="Paused"
+            count={campaignStats.paused}
+            icon={Pause}
+            gradient="from-amber-400 to-amber-600"
+          />
+          <StatCard
+            label="Completed"
+            count={campaignStats.completed}
+            icon={BarChart3}
+            gradient="from-blue-400 to-blue-600"
+          />
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search campaigns..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer"
+          >
+            <option value="all">All Status</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="running">Running</option>
+            <option value="active">Active</option>
+            <option value="paused">Paused</option>
+            <option value="completed">Completed</option>
+            <option value="stopped">Stopped</option>
+          </select>
+        </div>
+
+        {/* Campaign Cards */}
+        {filteredCampaigns.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center border border-gray-100">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BarChart3 className="w-10 h-10 text-gray-400" />
             </div>
-          ) : filteredCampaigns.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Activity className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p>No campaigns found. Create your first campaign above!</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredCampaigns.map((campaign) => (
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No campaigns found
+            </h3>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:scale-105 transition-all"
+            >
+              <Plus className="w-5 h-5" />
+              Create Campaign
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {filteredCampaigns.map((campaign) => (
+              <div
+                key={campaign.id}
+                className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-all border border-gray-100 overflow-hidden"
+              >
                 <div
-                  key={campaign.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="font-medium text-gray-900">
+                  className={`h-1.5 bg-gradient-to-r ${getStatusGradient(
+                    campaign.status
+                  )}`}
+                />
+                <div className="p-6 flex items-start justify-between">
+                  {/* Info */}
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-xl font-bold text-gray-900">
                         {campaign.name}
                       </h3>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                        className={`px-3 py-1 text-xs font-bold uppercase rounded-full ${getStatusBadge(
                           campaign.status
                         )}`}
                       >
                         {campaign.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                      {campaign.message}
+                    <p className="text-sm text-gray-600">
+                      {campaign.description}
                     </p>
-                    <div className="flex items-center space-x-4 text-xs text-gray-500">
-                      <span>Region: {campaign.region}</span>
-                      <span>
-                        Created: {formatDateTime(campaign.created_at)}
-                      </span>
-                      <span>ID: {campaign.id}</span>
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4" /> {campaign.city},{" "}
+                        {campaign.state}, {campaign.country}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-4 h-4" />{" "}
+                        {formatDateTime(campaign.created_at)}
+                      </div>
+                      {campaign.contact_list?.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <Users className="w-4 h-4" />{" "}
+                          {campaign.contact_list.length} contacts
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {/* Control buttons for active campaigns */}
-                    {campaign.status === "running" && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            handleControlCampaign(campaign.id, "pause")
-                          }
-                          leftIcon={<Pause className="w-4 h-4" />}
-                        >
-                          Pause
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            handleControlCampaign(campaign.id, "stop")
-                          }
-                          leftIcon={<Square className="w-4 h-4" />}
-                        >
-                          Stop
-                        </Button>
-                      </>
-                    )}
-                    {campaign.status === "paused" && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            handleControlCampaign(campaign.id, "resume")
-                          }
-                          leftIcon={<Play className="w-4 h-4" />}
-                        >
-                          Resume
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            handleControlCampaign(campaign.id, "stop")
-                          }
-                          leftIcon={<Square className="w-4 h-4" />}
-                        >
-                          Stop
-                        </Button>
-                      </>
-                    )}
 
-                    {/* Edit button for non-running campaigns */}
-                    {["scheduled", "paused", "completed", "cancelled"].includes(
-                      campaign.status
-                    ) && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditClick(campaign)}
-                        leftIcon={<Edit className="w-4 h-4" />}
-                      >
-                        Edit
-                      </Button>
-                    )}
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    {!isStopped(campaign.status) ? (
+                      <>
+                        {/* Play Button (for scheduled, paused, or draft) */}
+                        {shouldShowPlayButton(campaign.status) && (
+                          <button
+                            onClick={() => handlePlayCampaign(campaign)}
+                            disabled={
+                              loadingAction?.id === campaign.id &&
+                              loadingAction?.action === "play"
+                            }
+                            className="p-3 rounded-xl text-emerald-600 hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            title="Start / Resume"
+                          >
+                            {loadingAction?.id === campaign.id &&
+                            loadingAction?.action === "play" ? (
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                              <Play className="w-5 h-5" />
+                            )}
+                          </button>
+                        )}
 
-                    {/* Delete button for non-running campaigns */}
-                    {["scheduled", "completed", "cancelled"].includes(
-                      campaign.status
-                    ) && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteClick(campaign)}
-                        leftIcon={<Trash2 className="w-4 h-4" />}
-                        className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
-                      >
-                        Delete
-                      </Button>
-                    )}
+                        {/* Pause Button (for running/active) */}
+                        {shouldShowPauseButton(campaign.status) && (
+                          <button
+                            onClick={() => handlePauseCampaign(campaign.id)}
+                            disabled={
+                              loadingAction?.id === campaign.id &&
+                              loadingAction?.action === "pause"
+                            }
+                            className="p-3 rounded-xl text-amber-600 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            title="Pause"
+                          >
+                            {loadingAction?.id === campaign.id &&
+                            loadingAction?.action === "pause" ? (
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                              <Pause className="w-5 h-5" />
+                            )}
+                          </button>
+                        )}
+
+                        {/* Stop Button (for running/active/paused) */}
+                        {(campaign.status === "running" ||
+                          campaign.status === "active" ||
+                          campaign.status === "paused") && (
+                          <button
+                            onClick={() => handleStopCampaign(campaign.id)}
+                            disabled={
+                              loadingAction?.id === campaign.id &&
+                              loadingAction?.action === "stop"
+                            }
+                            className="p-3 rounded-xl text-red-600 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            title="Stop"
+                          >
+                            {loadingAction?.id === campaign.id &&
+                            loadingAction?.action === "stop" ? (
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                              <Square className="w-5 h-5" />
+                            )}
+                          </button>
+                        )}
+
+                        {/* Edit Button */}
+                        <button
+                          onClick={() => {
+                            setSelectedCampaign(campaign);
+                            setShowEditModal(true);
+                          }}
+                          disabled={
+                            loadingAction?.id === campaign.id &&
+                            loadingAction?.action !== null
+                          }
+                          className="p-3 rounded-xl text-blue-600 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                          title="Edit Campaign"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
+                      </>
+                    ) : null}
+
+                    {/* Always visible Delete button */}
+                    <button
+                      onClick={() => handleOpenDeleteModal(campaign)}
+                      className="p-3 rounded-xl text-red-600 hover:bg-red-100 transition-all"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Create Campaign Modal */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Create New Campaign"
-        size="lg"
-      >
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="createName">Campaign Name *</Label>
-            <Input
-              id="createName"
-              value={createFormData.name}
-              onChange={(e) =>
-                setCreateFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="Enter campaign name"
-            />
+              </div>
+            ))}
           </div>
+        )}
+      </div>
 
-          <div>
-            <Label htmlFor="createMessage">Message *</Label>
-            <Textarea
-              id="createMessage"
-              value={createFormData.message}
-              onChange={(e) =>
-                setCreateFormData((prev) => ({
-                  ...prev,
-                  message: e.target.value,
-                }))
-              }
-              placeholder="Enter the message to be delivered"
-              rows={4}
-            />
-          </div>
+      {/* Modals */}
+      {showCreateModal && (
+        <CreateCampaignModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={refreshCampaigns}
+        />
+      )}
 
-          <div>
-            <Label htmlFor="createRegion">Region</Label>
-            <Select
-              value={createFormData.region}
-              onChange={(e) =>
-                setCreateFormData((prev) => ({
-                  ...prev,
-                  region: e.target.value,
-                }))
-              }
-            >
-              <option value="global">Global</option>
-              <option value="us">United States</option>
-              <option value="uk">United Kingdom</option>
-              <option value="eu">Europe</option>
-              <option value="asia">Asia</option>
-            </Select>
-          </div>
-
-          {/* Status is automatically set by backend - no need for user input */}
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateCampaign} disabled={loading}>
-              {loading ? <LoadingSpinner size="sm" /> : "Create Campaign"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Edit Campaign Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        title="Edit Campaign"
-        size="lg"
-      >
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="editName">Campaign Name *</Label>
-            <Input
-              id="editName"
-              value={editFormData.name}
-              onChange={(e) =>
-                setEditFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
-              placeholder="Enter campaign name"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="editMessage">Message *</Label>
-            <Textarea
-              id="editMessage"
-              value={editFormData.message}
-              onChange={(e) =>
-                setEditFormData((prev) => ({
-                  ...prev,
-                  message: e.target.value,
-                }))
-              }
-              placeholder="Enter the message to be delivered"
-              rows={4}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="editRegion">Region</Label>
-            <Select
-              value={editFormData.region}
-              onChange={(e) =>
-                setEditFormData((prev) => ({ ...prev, region: e.target.value }))
-              }
-            >
-              <option value="global">Global</option>
-              <option value="us">United States</option>
-              <option value="uk">United Kingdom</option>
-              <option value="eu">Europe</option>
-              <option value="asia">Asia</option>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="editStatus">Status</Label>
-            <Select
-              value={editFormData.status}
-              onChange={(e) =>
-                setEditFormData((prev) => ({
-                  ...prev,
-                  status: e.target.value as any,
-                }))
-              }
-            >
-              <option value="scheduled">Scheduled</option>
-              <option value="running">Running</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </Select>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => setShowEditModal(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditCampaign} disabled={loading}>
-              {loading ? <LoadingSpinner size="sm" /> : "Update Campaign"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal
+      <DeleteModal
         isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleDeleteCampaign}
         title="Delete Campaign"
-        size="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Are you sure you want to delete the campaign "
-            {selectedCampaign?.name}"? This action cannot be undone.
-          </p>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteCampaign}
-              disabled={loading}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              {loading ? <LoadingSpinner size="sm" /> : "Delete Campaign"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Start Campaign Modal */}
-      <Modal
-        isOpen={showStartModal}
-        onClose={() => setShowStartModal(false)}
-        title="Start New Campaign"
-        size="lg"
-      >
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="startCampaignName">Campaign Name *</Label>
-            <Input
-              id="startCampaignName"
-              value={startFormData.campaignName}
-              onChange={(e) =>
-                setStartFormData((prev) => ({
-                  ...prev,
-                  campaignName: e.target.value,
-                }))
-              }
-              placeholder="Enter campaign name"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="startMessage">Message *</Label>
-            <Textarea
-              id="startMessage"
-              value={startFormData.message}
-              onChange={(e) =>
-                setStartFormData((prev) => ({
-                  ...prev,
-                  message: e.target.value,
-                }))
-              }
-              placeholder="Enter the message to be delivered"
-              rows={4}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="startRegion">Region</Label>
-            <Select
-              value={startFormData.region}
-              onChange={(e) =>
-                setStartFormData((prev) => ({
-                  ...prev,
-                  region: e.target.value,
-                }))
-              }
-            >
-              <option value="global">Global</option>
-              <option value="us">United States</option>
-              <option value="uk">United Kingdom</option>
-              <option value="eu">Europe</option>
-              <option value="asia">Asia</option>
-            </Select>
-          </div>
-
-          <div>
-            <Label>
-              Select Contacts * ({startFormData.selectedContacts.length}{" "}
-              selected)
-            </Label>
-            <div className="max-h-48 overflow-y-auto border rounded-lg p-2 mt-1">
-              {contacts.map((contact) => (
-                <label
-                  key={contact.phone_number}
-                  className="flex items-center space-x-2 p-2 hover:bg-gray-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={startFormData.selectedContacts.some(
-                      (c) => c.phone_number === contact.phone_number
-                    )}
-                    onChange={(e) =>
-                      handleContactSelection(contact, e.target.checked)
-                    }
-                    className="rounded"
-                  />
-                  <span className="text-sm">
-                    {contact.name} - {contact.phone_number}
-                  </span>
-                </label>
-              ))}
-            </div>
-            {contacts.length === 0 && (
-              <p className="text-sm text-gray-500 mt-2">
-                No contacts available. Please upload contacts first.
-              </p>
-            )}
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => setShowStartModal(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleStartCampaign} disabled={loading}>
-              {loading ? <LoadingSpinner size="sm" /> : "Start Campaign"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Schedule Campaign Modal */}
-      <Modal
-        isOpen={showScheduleModal}
-        onClose={() => setShowScheduleModal(false)}
-        title="Schedule Campaign"
-        size="lg"
-      >
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="scheduleName">Campaign Name *</Label>
-            <Input
-              id="scheduleName"
-              value={scheduleFormData.name}
-              onChange={(e) =>
-                setScheduleFormData((prev) => ({
-                  ...prev,
-                  name: e.target.value,
-                }))
-              }
-              placeholder="Enter campaign name"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="scheduleMessage">Message *</Label>
-            <Textarea
-              id="scheduleMessage"
-              value={scheduleFormData.message}
-              onChange={(e) =>
-                setScheduleFormData((prev) => ({
-                  ...prev,
-                  message: e.target.value,
-                }))
-              }
-              placeholder="Enter the message to be delivered"
-              rows={4}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="scheduleRegion">Region</Label>
-            <Select
-              value={scheduleFormData.region}
-              onChange={(e) =>
-                setScheduleFormData((prev) => ({
-                  ...prev,
-                  region: e.target.value,
-                }))
-              }
-            >
-              <option value="global">Global</option>
-              <option value="us">United States</option>
-              <option value="uk">United Kingdom</option>
-              <option value="eu">Europe</option>
-              <option value="asia">Asia</option>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="startTime">Start Time *</Label>
-            <Input
-              id="startTime"
-              type="datetime-local"
-              value={scheduleFormData.startTime}
-              onChange={(e) =>
-                setScheduleFormData((prev) => ({
-                  ...prev,
-                  startTime: e.target.value,
-                }))
-              }
-            />
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowScheduleModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleScheduleCampaign} disabled={loading}>
-              {loading ? <LoadingSpinner size="sm" /> : "Schedule Campaign"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        itemName={selectedCampaign?.name || ""}
+        itemType="Campaign"
+        isDeleting={deleting}
+      />
     </div>
   );
 };

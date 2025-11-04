@@ -1,0 +1,78 @@
+export interface ContactType {
+  name: string;
+  phone_number: string;
+  country: string;
+  state: string;
+  city: string;
+}
+
+export interface CampaignType {
+    intent_model: string;
+    speaking_rate: number;
+    call_timeout: number;
+    timezone: string;
+    auto_update_crm: boolean;
+    api_integrations: Record<string, any>;
+    gpu_acceleration: boolean;
+    total_calls: number;
+    context_window: number;
+    voice_emotion: string;
+    max_call_duration: number;
+    business_hours_start: string;
+    ivr_integration_enabled: boolean;
+    analytics_enabled: boolean;
+    start_time: string | null;
+    successful_calls: number;
+    name: string;
+    response_style: string;
+    custom_voice_enabled: boolean;
+    region: string;
+    business_hours_end: string;
+    ivr_system: string;
+    call_recording_enabled: boolean;
+    end_time: string | null;
+    failed_calls: number;
+    id: number;
+    max_conversation_turns: number;
+    voice_training_data_url: string;
+    days_of_week: string;
+    crm_integration_enabled: boolean;
+    ivr_config: Record<string, any>;
+    transcription_enabled: boolean;
+    scheduled_at: string | null;
+    average_call_duration: number | null;
+    description: string;
+    voice_type: string;
+    voice_cloning_model: string;
+    country: string;
+    knowledge_base_file_id: number;
+    transfer_enabled: boolean;
+    sentiment_analysis_enabled: boolean;
+    created_by: number;
+    conversion_rate: number | null;
+    campaign_type: string;
+    voice_id: string;
+    voice_quality: string;
+    state: string;
+    crm_provider: string;
+    transfer_number: string;
+    real_time_monitoring: boolean;
+    created_at: string;
+    customer_satisfaction_score: number | null;
+    status: string;
+    language: string;
+    max_retries: number;
+    city: string;
+    crm_config: Record<string, any>;
+    webhook_url: string;
+    concurrent_calls: number;
+    updated_at: string;
+    ai_prompt: string;
+    accent: string;
+    retry_delay: number;
+    lead_scoring_enabled: boolean;
+    webhook_events: string[];
+    call_quality_threshold: number;
+    last_run: string | null;
+  }
+  

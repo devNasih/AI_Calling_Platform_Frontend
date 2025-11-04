@@ -153,24 +153,6 @@ const InboundCalls: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Inbound Calls</h1>
           <p className="text-gray-600">Manage and analyze incoming calls</p>
         </div>
-        <div className="flex space-x-2">
-          <Button
-            onClick={handleTestInbound}
-            variant="outline"
-            leftIcon={<Settings className="w-4 h-4" />}
-            disabled={loading}
-          >
-            Test Handler
-          </Button>
-          <Button
-            onClick={loadInboundCalls}
-            variant="outline"
-            leftIcon={<RefreshCw className="w-4 h-4" />}
-            disabled={loading}
-          >
-            Refresh
-          </Button>
-        </div>
       </div>
 
       {/* Stats Cards */}

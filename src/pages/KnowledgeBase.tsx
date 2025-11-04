@@ -72,13 +72,6 @@ const KnowledgeBase: React.FC = () => {
     }
   };
 
-  const formatFileSize = (bytes: number | null) => {
-    if (!bytes || bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
 
   const getStatus = (status: string) => {
     switch (status) {
@@ -161,7 +154,6 @@ const KnowledgeBase: React.FC = () => {
               <div>
                 <h3 className="text-sm font-medium text-gray-900">{doc.filename}</h3>
                 <div className="flex items-center space-x-4 mt-1">
-                  <span className="text-xs text-gray-500">{formatFileSize(doc.file_size)}</span>
                   <span className="text-xs text-gray-500">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
                   <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
                     {statusInfo.icon}
