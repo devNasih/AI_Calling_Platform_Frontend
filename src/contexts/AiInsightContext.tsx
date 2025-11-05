@@ -1,9 +1,22 @@
-import { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  ReactNode,
+  useCallback,
+} from "react";
 import { useLocation } from "react-router-dom";
 import { getRecentAiInsights } from "../services/ai_insight_services";
-import { AiInsightsData, AiInsightsContextType } from "../types/ai_insight_type";
+import {
+  AiInsightsData,
+  AiInsightsContextType,
+} from "../types/ai_insight_type";
 
-const AiInsightsContext = createContext<AiInsightsContextType | undefined>(undefined);
+const AiInsightsContext = createContext<AiInsightsContextType | undefined>(
+  undefined
+);
 
 type AiInsightsProviderProps = { children: ReactNode };
 
@@ -29,9 +42,13 @@ export const AiInsightsProvider = ({ children }: AiInsightsProviderProps) => {
   }, []);
 
   useEffect(() => {
-    if (location.pathname === "/ai" && !hasFetchedRef.current) {
-      fetchInsights();
-      hasFetchedRef.current = true;
+    if (location.pathname === "/ai") {
+      if (!hasFetchedRef.current) {
+        fetchInsights();
+        hasFetchedRef.current = true;
+      }
+    } else {
+      hasFetchedRef.current = false;
     }
   }, [location.pathname, fetchInsights]);
 
